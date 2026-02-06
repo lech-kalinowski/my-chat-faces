@@ -4,7 +4,7 @@ A Chrome extension that lets you set custom background images on AI chat interfa
 
 Pick from three built-in backgrounds (Cyber, Fantasy, Unicorns) or upload your own image. Your choice persists across sessions, and backgrounds apply automatically every time you visit a supported site.
 
-<img width="1220" height="1122" alt="Screenshot 2026-02-06 at 14 06 02" src="https://github.com/user-attachments/assets/5a6967c9-0c72-4a91-88f3-7d2156e86ee5" />
+<img width="1776" height="1188" alt="Screenshot 2026-02-06 at 17 06 52" src="https://github.com/user-attachments/assets/616d0762-8b60-43c8-a0ff-1afd8caa4a00" />
 
 ## Features
 
