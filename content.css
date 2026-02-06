@@ -77,6 +77,14 @@ html.chatfaces-active main * {
   background: transparent !important;
 }
 
+/* Kill ALL pseudo-element backgrounds/gradients across the entire page */
+html.chatfaces-active body *::before,
+html.chatfaces-active body *::after {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
 /* ══════════════════════════════════════════════════
    Sidebar — light frosted glass tint
    ══════════════════════════════════════════════════ */
