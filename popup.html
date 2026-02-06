@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Chat Faces</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <h1 class="title">My Chat Faces</h1>
+    <p class="subtitle">Pick a background for your AI chats</p>
+
+    <div class="grid">
+      <button class="card" data-bg="cyber">
+        <img src="backgrounds/cyber.png" alt="Cyber">
+        <span class="label">Cyber</span>
+        <span class="check">&#10003;</span>
+      </button>
+
+      <button class="card" data-bg="fantasy">
+        <img src="backgrounds/fantasy.png" alt="Fantasy">
+        <span class="label">Fantasy</span>
+        <span class="check">&#10003;</span>
+      </button>
+
+      <button class="card" data-bg="unicorns">
+        <img src="backgrounds/unicorns.png" alt="Unicorns">
+        <span class="label">Unicorns</span>
+        <span class="check">&#10003;</span>
+      </button>
+
+      <!-- Custom upload card -->
+      <button class="card card-upload" id="custom-card" data-bg="custom">
+        <div class="upload-placeholder" id="upload-placeholder">
+          <span class="upload-icon">+</span>
+        </div>
+        <img id="custom-preview" class="custom-preview" src="" alt="Custom" style="display:none;">
+        <span class="change-btn" id="change-btn" style="display:none;">Change</span>
+        <span class="label">Custom</span>
+        <span class="check">&#10003;</span>
+      </button>
+    </div>
+
+    <input type="file" id="file-input" accept="image/*" hidden>
+
+    <button id="remove-btn" class="remove-btn" disabled>Remove Background</button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
