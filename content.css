@@ -1,159 +1,219 @@
 /* ══════════════════════════════════════════════════
-   ChatFaces – Background Layer & Transparency Overrides
+   ChatFaces – Background on <html> + Transparency
    ══════════════════════════════════════════════════ */
 
-/* ── Background layer (injected by content.js) ── */
-#chatfaces-bg-layer {
+/* ── Background via ::before pseudo-element for animation ── */
+html.chatfaces-active {
+  position: relative !important;
+}
+
+html.chatfaces-active::before {
+  content: "";
   position: fixed;
   inset: 0;
-  z-index: -1;
-  background-size: contain;
-  background-position: center bottom;
-  background-repeat: no-repeat;
+  z-index: 0;
+  background: var(--chatfaces-bg) center center / cover no-repeat fixed;
   background-color: #0a0a14;
-  pointer-events: none;
-  opacity: 0;
+  opacity: var(--chatfaces-opacity, 0);
   transition: opacity 2s cubic-bezier(0.25, 0, 0.15, 1);
-}
-
-#chatfaces-bg-layer.chatfaces-visible {
-  opacity: 1;
-}
-
-/* Fade-out when removing */
-#chatfaces-bg-layer.chatfaces-fade-out {
-  opacity: 0;
-  transition: opacity 1.2s cubic-bezier(0.25, 0, 0.15, 1);
+  pointer-events: none;
 }
 
 /* ══════════════════════════════════════════════════
-   Per-message readable panels
-   Each chat message gets a dark semi-transparent
-   background so text is readable while the BG image
-   stays fully visible between messages.
+   Make EVERYTHING on the page transparent so the
+   html background shows through everywhere.
    ══════════════════════════════════════════════════ */
 
-/* ── ChatGPT message bubbles ── */
-html[data-chatfaces-site="chatgpt"] body.chatfaces-transparent article[data-testid^="conversation-turn"] {
-  background: rgba(10, 10, 20, 0.60) !important;
-  border-radius: 16px !important;
+/* Body — transparent and above the ::before pseudo */
+html.chatfaces-active body {
+  background: transparent !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* All nested containers — nuclear approach */
+html.chatfaces-active body > div,
+html.chatfaces-active body > div > div,
+html.chatfaces-active body > div > div > div,
+html.chatfaces-active body > div > div > div > div,
+html.chatfaces-active body > div > div > div > div > div,
+html.chatfaces-active main,
+html.chatfaces-active header,
+html.chatfaces-active nav,
+html.chatfaces-active aside,
+html.chatfaces-active [class*="bg-token"],
+html.chatfaces-active [class*="bg-white"],
+html.chatfaces-active [class*="bg-gray"],
+html.chatfaces-active [class*="bg-black"],
+html.chatfaces-active [class*="bg-bg"],
+html.chatfaces-active [class*="bg-stone"],
+html.chatfaces-active [class*="bg-cream"],
+html.chatfaces-active [class*="react-scroll-to-bottom"],
+html.chatfaces-active [class*="sidebar"],
+html.chatfaces-active [class*="min-h-screen"],
+html.chatfaces-active [class*="overflow-y-auto"],
+html.chatfaces-active [class*="overflow-hidden"],
+html.chatfaces-active .h-full.w-full,
+html.chatfaces-active .flex.h-full,
+html.chatfaces-active .flex-1,
+html.chatfaces-active .contents,
+html.chatfaces-active mat-sidenav-content,
+html.chatfaces-active .conversation-container,
+html.chatfaces-active [class*="chat-window"],
+html.chatfaces-active [class*="response-container"],
+html.chatfaces-active [class*="main-container"],
+html.chatfaces-active .gmat-body-medium {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+/* Deep-nuke inside sidebar + main */
+html.chatfaces-active nav *,
+html.chatfaces-active aside *,
+html.chatfaces-active [class*="sidebar"] *,
+html.chatfaces-active main * {
+  background-color: transparent !important;
+  background-image: none !important;
+  background: transparent !important;
+}
+
+/* ══════════════════════════════════════════════════
+   Sidebar — light frosted glass tint
+   ══════════════════════════════════════════════════ */
+html.chatfaces-active nav {
+  background-color: rgba(10, 10, 20, 0.25) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}
+
+/* ══════════════════════════════════════════════════
+   iMessage / WhatsApp style chat bubbles
+   ══════════════════════════════════════════════════ */
+
+/* ═══ ChatGPT ═══ */
+
+/* User bubble — tinted green, right-aligned tail */
+html.chatfaces-active[data-chatfaces-site="chatgpt"] article[data-testid^="conversation-turn-"]:nth-child(odd) {
+  background: rgba(34, 120, 100, 0.55) !important;
+  border-radius: 18px 18px 4px 18px !important;
+  margin-left: auto !important;
+  margin-right: 16px !important;
+  max-width: 80% !important;
   padding: 12px 16px !important;
   margin-bottom: 8px !important;
   backdrop-filter: blur(6px) !important;
   -webkit-backdrop-filter: blur(6px) !important;
 }
 
-/* ── ChatGPT input bar area ── */
-html[data-chatfaces-site="chatgpt"] body.chatfaces-transparent form {
-  background: rgba(10, 10, 20, 0.55) !important;
-  border-radius: 16px !important;
-  backdrop-filter: blur(6px) !important;
-  -webkit-backdrop-filter: blur(6px) !important;
-}
-
-/* ── Claude message bubbles ── */
-html[data-chatfaces-site="claude"] body.chatfaces-transparent [data-testid="user-message"],
-html[data-chatfaces-site="claude"] body.chatfaces-transparent [data-testid="assistant-message"],
-html[data-chatfaces-site="claude"] body.chatfaces-transparent .font-claude-message,
-html[data-chatfaces-site="claude"] body.chatfaces-transparent .font-user-message {
-  background: rgba(10, 10, 20, 0.60) !important;
-  border-radius: 16px !important;
+/* Assistant bubble — dark, left-aligned tail */
+html.chatfaces-active[data-chatfaces-site="chatgpt"] article[data-testid^="conversation-turn-"]:nth-child(even) {
+  background: rgba(30, 30, 50, 0.60) !important;
+  border-radius: 18px 18px 18px 4px !important;
+  margin-right: auto !important;
+  margin-left: 16px !important;
+  max-width: 85% !important;
   padding: 12px 16px !important;
   margin-bottom: 8px !important;
   backdrop-filter: blur(6px) !important;
   -webkit-backdrop-filter: blur(6px) !important;
 }
 
-/* ── Claude input bar ── */
-html[data-chatfaces-site="claude"] body.chatfaces-transparent [class*="ProseMirror"],
-html[data-chatfaces-site="claude"] body.chatfaces-transparent fieldset {
-  background: rgba(10, 10, 20, 0.55) !important;
+/* Input bar */
+html.chatfaces-active[data-chatfaces-site="chatgpt"] form {
+  background: rgba(15, 15, 30, 0.55) !important;
   border-radius: 16px !important;
   backdrop-filter: blur(6px) !important;
   -webkit-backdrop-filter: blur(6px) !important;
 }
 
-/* ── Gemini message bubbles ── */
-html[data-chatfaces-site="gemini"] body.chatfaces-transparent message-content,
-html[data-chatfaces-site="gemini"] body.chatfaces-transparent .query-content,
-html[data-chatfaces-site="gemini"] body.chatfaces-transparent .response-container-content,
-html[data-chatfaces-site="gemini"] body.chatfaces-transparent .conversation-turn {
-  background: rgba(10, 10, 20, 0.60) !important;
-  border-radius: 16px !important;
+/* ═══ Claude ═══ */
+
+html.chatfaces-active[data-chatfaces-site="claude"] [data-testid="user-message"],
+html.chatfaces-active[data-chatfaces-site="claude"] .font-user-message {
+  background: rgba(34, 120, 100, 0.55) !important;
+  border-radius: 18px 18px 4px 18px !important;
   padding: 12px 16px !important;
   margin-bottom: 8px !important;
   backdrop-filter: blur(6px) !important;
   -webkit-backdrop-filter: blur(6px) !important;
 }
 
-/* ── Gemini input bar ── */
-html[data-chatfaces-site="gemini"] body.chatfaces-transparent .input-area-container,
-html[data-chatfaces-site="gemini"] body.chatfaces-transparent rich-textarea {
-  background: rgba(10, 10, 20, 0.55) !important;
+html.chatfaces-active[data-chatfaces-site="claude"] [data-testid="assistant-message"],
+html.chatfaces-active[data-chatfaces-site="claude"] .font-claude-message {
+  background: rgba(30, 30, 50, 0.60) !important;
+  border-radius: 18px 18px 18px 4px !important;
+  padding: 12px 16px !important;
+  margin-bottom: 8px !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+}
+
+html.chatfaces-active[data-chatfaces-site="claude"] [class*="ProseMirror"],
+html.chatfaces-active[data-chatfaces-site="claude"] fieldset {
+  background: rgba(15, 15, 30, 0.55) !important;
   border-radius: 16px !important;
   backdrop-filter: blur(6px) !important;
   -webkit-backdrop-filter: blur(6px) !important;
 }
 
-/* ── Ensure text stays light and readable on all sites ── */
-html[data-chatfaces-site] body.chatfaces-transparent article[data-testid^="conversation-turn"] *,
-html[data-chatfaces-site] body.chatfaces-transparent [data-testid="user-message"] *,
-html[data-chatfaces-site] body.chatfaces-transparent [data-testid="assistant-message"] *,
-html[data-chatfaces-site] body.chatfaces-transparent .font-claude-message *,
-html[data-chatfaces-site] body.chatfaces-transparent message-content *,
-html[data-chatfaces-site] body.chatfaces-transparent .conversation-turn * {
+/* ═══ Gemini ═══ */
+
+html.chatfaces-active[data-chatfaces-site="gemini"] .query-content,
+html.chatfaces-active[data-chatfaces-site="gemini"] .user-query {
+  background: rgba(34, 120, 100, 0.55) !important;
+  border-radius: 18px 18px 4px 18px !important;
+  padding: 12px 16px !important;
+  margin-bottom: 8px !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+}
+
+html.chatfaces-active[data-chatfaces-site="gemini"] message-content,
+html.chatfaces-active[data-chatfaces-site="gemini"] .response-container-content,
+html.chatfaces-active[data-chatfaces-site="gemini"] .conversation-turn {
+  background: rgba(30, 30, 50, 0.60) !important;
+  border-radius: 18px 18px 18px 4px !important;
+  padding: 12px 16px !important;
+  margin-bottom: 8px !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+}
+
+html.chatfaces-active[data-chatfaces-site="gemini"] .input-area-container,
+html.chatfaces-active[data-chatfaces-site="gemini"] rich-textarea {
+  background: rgba(15, 15, 30, 0.55) !important;
+  border-radius: 16px !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+}
+
+/* ══════════════════════════════════════════════════
+   Text readability
+   ══════════════════════════════════════════════════ */
+
+/* Chat message text */
+html.chatfaces-active article[data-testid^="conversation-turn"] *,
+html.chatfaces-active [data-testid="user-message"] *,
+html.chatfaces-active [data-testid="assistant-message"] *,
+html.chatfaces-active .font-claude-message *,
+html.chatfaces-active .font-user-message *,
+html.chatfaces-active message-content *,
+html.chatfaces-active .conversation-turn * {
   color: #e8e8ee !important;
 }
 
-/* ══════════════════════════════════════════════════
-   Site-specific transparency overrides
-   These make the native backgrounds see-through so
-   our custom background shows through.
-   ══════════════════════════════════════════════════ */
-
-/* ── ChatGPT (chatgpt.com / chat.openai.com) ── */
-html[data-chatfaces-site="chatgpt"] body.chatfaces-transparent,
-html[data-chatfaces-site="chatgpt"] body.chatfaces-transparent .flex.h-full,
-html[data-chatfaces-site="chatgpt"] body.chatfaces-transparent main,
-html[data-chatfaces-site="chatgpt"] body.chatfaces-transparent .relative.flex.h-full,
-html[data-chatfaces-site="chatgpt"] body.chatfaces-transparent div.relative.flex.h-full.max-w-full,
-html[data-chatfaces-site="chatgpt"] body.chatfaces-transparent .overflow-y-auto {
-  background-color: transparent !important;
-  background-image: none !important;
+/* Sidebar text + icons */
+html.chatfaces-active nav *,
+html.chatfaces-active aside *,
+html.chatfaces-active [class*="sidebar"] *,
+html.chatfaces-active mat-sidenav * {
+  color: #e8e8f0 !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7) !important;
 }
 
-/* The main chat column */
-html[data-chatfaces-site="chatgpt"] body.chatfaces-transparent .flex-1.overflow-hidden,
-html[data-chatfaces-site="chatgpt"] body.chatfaces-transparent [class*="react-scroll-to-bottom"],
-html[data-chatfaces-site="chatgpt"] body.chatfaces-transparent .h-full.w-full {
-  background-color: transparent !important;
-  background-image: none !important;
-}
-
-/* ── Claude (claude.ai) ── */
-html[data-chatfaces-site="claude"] body.chatfaces-transparent,
-html[data-chatfaces-site="claude"] body.chatfaces-transparent main,
-html[data-chatfaces-site="claude"] body.chatfaces-transparent .flex-1,
-html[data-chatfaces-site="claude"] body.chatfaces-transparent [class*="min-h-screen"],
-html[data-chatfaces-site="claude"] body.chatfaces-transparent [class*="bg-bg"],
-html[data-chatfaces-site="claude"] body.chatfaces-transparent [class*="bg-white"],
-html[data-chatfaces-site="claude"] body.chatfaces-transparent [class*="bg-stone"],
-html[data-chatfaces-site="claude"] body.chatfaces-transparent [class*="bg-cream"],
-html[data-chatfaces-site="claude"] body.chatfaces-transparent .contents,
-html[data-chatfaces-site="claude"] body.chatfaces-transparent .flex.min-h-full {
-  background-color: transparent !important;
-  background-image: none !important;
-}
-
-/* ── Gemini (gemini.google.com) ── */
-html[data-chatfaces-site="gemini"] body.chatfaces-transparent,
-html[data-chatfaces-site="gemini"] body.chatfaces-transparent main,
-html[data-chatfaces-site="gemini"] body.chatfaces-transparent .conversation-container,
-html[data-chatfaces-site="gemini"] body.chatfaces-transparent [class*="chat-window"],
-html[data-chatfaces-site="gemini"] body.chatfaces-transparent [class*="response-container"],
-html[data-chatfaces-site="gemini"] body.chatfaces-transparent mat-sidenav-content,
-html[data-chatfaces-site="gemini"] body.chatfaces-transparent .gmat-body-medium,
-html[data-chatfaces-site="gemini"] body.chatfaces-transparent [class*="main-container"] {
-  background-color: transparent !important;
-  background-image: none !important;
+/* Sidebar hover */
+html.chatfaces-active nav a:hover,
+html.chatfaces-active nav li:hover,
+html.chatfaces-active nav button:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
 }

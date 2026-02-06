@@ -1,9 +1,8 @@
 // ── ChatFaces Content Script ──
-// Injects a full-screen background behind AI chat interfaces.
-// Per-message readability panels are handled entirely via CSS.
+// Sets background via CSS custom properties on <html>.
+// Uses ::before pseudo-element for fade animation.
 
-const BG_LAYER_ID = "chatfaces-bg-layer";
-const TRANSPARENT_CLASS = "chatfaces-transparent";
+const ACTIVE_CLASS = "chatfaces-active";
 
 // ── Detect which site we're on ──
 function detectSite() {
@@ -12,17 +11,6 @@ function detectSite() {
   if (host === "claude.ai") return "claude";
   if (host === "gemini.google.com") return "gemini";
   return null;
-}
-
-// ── Get or create the background layer ──
-function getOrCreateLayer() {
-  let layer = document.getElementById(BG_LAYER_ID);
-  if (!layer) {
-    layer = document.createElement("div");
-    layer.id = BG_LAYER_ID;
-    document.body.prepend(layer);
-  }
-  return layer;
 }
 
 // ── Resolve the image URL (bundled preset or custom data URL) ──
@@ -36,55 +24,67 @@ function resolveImageUrl(bgName, callback) {
   }
 }
 
-// ── Apply the chosen background with fade-in ──
-function applyBackground(bgName) {
+const html = document.documentElement;
+
+// ── Fade helpers ──
+function fadeIn() {
+  html.style.setProperty("--chatfaces-opacity", "1");
+}
+
+function fadeOut() {
+  return new Promise((resolve) => {
+    html.style.setProperty("--chatfaces-opacity", "0");
+    // Wait for the transition to finish
+    const onEnd = () => {
+      html.removeEventListener("transitionend", onEnd);
+      resolve();
+    };
+    html.addEventListener("transitionend", onEnd);
+    // Fallback timeout in case transitionend doesn't fire
+    setTimeout(resolve, 2200);
+  });
+}
+
+// ── Apply background ──
+async function applyBackground(bgName) {
   if (!bgName) {
     removeBackground();
     return;
   }
 
-  resolveImageUrl(bgName, (url) => {
+  const isAlreadyActive = html.classList.contains(ACTIVE_CLASS);
+
+  resolveImageUrl(bgName, async (url) => {
     if (!url) return;
 
-    const layer = getOrCreateLayer();
-
-    // If switching backgrounds, fade out first then fade in with new image
-    const isAlreadyVisible = layer.classList.contains("chatfaces-visible");
-    if (isAlreadyVisible) {
-      layer.classList.remove("chatfaces-visible");
-      layer.addEventListener("transitionend", function onFadeOut() {
-        layer.removeEventListener("transitionend", onFadeOut);
-        layer.style.backgroundImage = `url("${url}")`;
-        const img = new Image();
-        img.onload = () => {
-          requestAnimationFrame(() => layer.classList.add("chatfaces-visible"));
-        };
-        img.src = url;
-      }, { once: true });
-    } else {
-      layer.style.backgroundImage = `url("${url}")`;
-      document.body.classList.add(TRANSPARENT_CLASS);
+    if (isAlreadyActive) {
+      // Switching: fade out, swap image, fade in
+      await fadeOut();
+      html.style.setProperty("--chatfaces-bg", `url("${url}")`);
+      // Let browser paint the new image before fading in
       const img = new Image();
-      img.onload = () => {
-        requestAnimationFrame(() => layer.classList.add("chatfaces-visible"));
-      };
+      img.onload = () => requestAnimationFrame(() => fadeIn());
+      img.src = url;
+    } else {
+      // First apply: set image, add class, then fade in
+      html.style.setProperty("--chatfaces-bg", `url("${url}")`);
+      html.classList.add(ACTIVE_CLASS);
+      // Preload image, then fade in
+      const img = new Image();
+      img.onload = () => requestAnimationFrame(() => fadeIn());
       img.src = url;
     }
   });
 }
 
-// ── Remove the background with fade-out ──
-function removeBackground() {
-  const layer = document.getElementById(BG_LAYER_ID);
-  if (!layer) return;
+// ── Remove background ──
+async function removeBackground() {
+  if (!html.classList.contains(ACTIVE_CLASS)) return;
 
-  layer.classList.add("chatfaces-fade-out");
-  layer.classList.remove("chatfaces-visible");
-  layer.addEventListener("transitionend", function onDone() {
-    layer.removeEventListener("transitionend", onDone);
-    layer.remove();
-    document.body.classList.remove(TRANSPARENT_CLASS);
-  }, { once: true });
+  await fadeOut();
+  html.classList.remove(ACTIVE_CLASS);
+  html.style.removeProperty("--chatfaces-bg");
+  html.style.removeProperty("--chatfaces-opacity");
 }
 
 // ── Initialize ──
@@ -92,15 +92,12 @@ function init() {
   const site = detectSite();
   if (!site) return;
 
-  // Add site-specific attribute for targeted CSS overrides
-  document.documentElement.setAttribute("data-chatfaces-site", site);
+  html.setAttribute("data-chatfaces-site", site);
 
-  // Read saved background and apply
   chrome.storage.sync.get("chatfaces_bg", (data) => {
     applyBackground(data.chatfaces_bg || null);
   });
 
-  // Listen for live changes from the popup
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area === "sync" && changes.chatfaces_bg) {
       applyBackground(changes.chatfaces_bg.newValue || null);
@@ -108,7 +105,6 @@ function init() {
   });
 }
 
-// Run when the DOM is ready
 if (document.body) {
   init();
 } else {
