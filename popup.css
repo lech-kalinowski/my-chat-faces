@@ -20,12 +20,35 @@ body {
   align-items: center;
 }
 
+/* ── Header row ── */
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
 /* ── Title ── */
 .title {
   font-size: 20px;
   font-weight: 700;
   color: #ffffff;
   letter-spacing: 0.5px;
+}
+
+/* ── Sponsor heart link ── */
+.sponsor-link {
+  font-size: 16px;
+  text-decoration: none;
+  opacity: 0.6;
+  transition: opacity 0.2s, transform 0.2s;
+  display: inline-block;
+}
+
+.sponsor-link:hover {
+  opacity: 1;
+  transform: scale(1.2);
 }
 
 .subtitle {

@@ -100,12 +100,9 @@ fileInput.addEventListener("change", (e) => {
   fileInput.value = "";
 });
 
-// ── Remove button: clear choice AND custom image data ──
+// ── Remove button: clear active choice but keep custom image data ──
 removeBtn.addEventListener("click", () => {
   chrome.storage.sync.remove("chatfaces_bg", () => {
-    chrome.storage.local.remove("chatfaces_custom_data", () => {
-      setActive(null);
-      showCustomPreview(null);
-    });
+    setActive(null);
   });
 });

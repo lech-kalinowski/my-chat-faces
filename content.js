@@ -45,6 +45,37 @@ function fadeOut() {
   });
 }
 
+// ── Set the background image on the ::before pseudo-element ──
+// For data URLs (custom), inject a <style> tag since CSS vars can choke on long values.
+let customStyleEl = null;
+
+function setBgImage(url) {
+  // Try CSS variable first (works for short extension URLs)
+  html.style.setProperty("--chatfaces-bg", `url("${url}")`);
+
+  // For data URLs, also inject a direct style override to be safe
+  if (url.startsWith("data:")) {
+    if (!customStyleEl) {
+      customStyleEl = document.createElement("style");
+      customStyleEl.id = "chatfaces-custom-style";
+      document.head.appendChild(customStyleEl);
+    }
+    customStyleEl.textContent = `html.chatfaces-active::before { background-image: url("${url}") !important; }`;
+  } else {
+    // Remove injected style if switching back to a preset
+    if (customStyleEl) {
+      customStyleEl.textContent = "";
+    }
+  }
+}
+
+function clearBgImage() {
+  html.style.removeProperty("--chatfaces-bg");
+  if (customStyleEl) {
+    customStyleEl.textContent = "";
+  }
+}
+
 // ── Apply background ──
 async function applyBackground(bgName) {
   if (!bgName) {
@@ -60,16 +91,14 @@ async function applyBackground(bgName) {
     if (isAlreadyActive) {
       // Switching: fade out, swap image, fade in
       await fadeOut();
-      html.style.setProperty("--chatfaces-bg", `url("${url}")`);
-      // Let browser paint the new image before fading in
+      setBgImage(url);
       const img = new Image();
       img.onload = () => requestAnimationFrame(() => fadeIn());
       img.src = url;
     } else {
       // First apply: set image, add class, then fade in
-      html.style.setProperty("--chatfaces-bg", `url("${url}")`);
+      setBgImage(url);
       html.classList.add(ACTIVE_CLASS);
-      // Preload image, then fade in
       const img = new Image();
       img.onload = () => requestAnimationFrame(() => fadeIn());
       img.src = url;
@@ -83,7 +112,7 @@ async function removeBackground() {
 
   await fadeOut();
   html.classList.remove(ACTIVE_CLASS);
-  html.style.removeProperty("--chatfaces-bg");
+  clearBgImage();
   html.style.removeProperty("--chatfaces-opacity");
 }
 
