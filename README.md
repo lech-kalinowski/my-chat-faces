@@ -1,6 +1,6 @@
 # My Chat Faces
 
-A Chrome extension that lets you set custom background images on AI chat interfaces — **ChatGPT**, **Claude**, and **Gemini**.
+A Chrome extension that lets you set custom background images on AI chat interfaces — **ChatGPT**, **Claude**, **Gemini**, and **Grok**.
 
 Pick from three built-in backgrounds (Cyber, Fantasy, Unicorns) or upload your own image. Your choice persists across sessions, and backgrounds apply automatically every time you visit a supported site.
 
@@ -14,10 +14,11 @@ Pick from three built-in backgrounds (Cyber, Fantasy, Unicorns) or upload your o
 - **Per-message readability** — chat messages get a dark translucent panel so text stays readable
 - **Live switching** — change backgrounds from the popup without reloading the page
 - **Persistent** — your choice is saved and reapplied automatically
-- **Supports 3 AI chat sites:**
+- **Supports 4 AI chat sites:**
   - [ChatGPT](https://chatgpt.com) (`chatgpt.com` / `chat.openai.com`)
   - [Claude](https://claude.ai) (`claude.ai`)
   - [Gemini](https://gemini.google.com) (`gemini.google.com`)
+  - [Grok](https://grok.com) (`grok.com` / `x.com/i/grok`)
 
 ## Installation
 
@@ -29,7 +30,7 @@ Pick from three built-in backgrounds (Cyber, Fantasy, Unicorns) or upload your o
 
 ## Usage
 
-1. Visit ChatGPT, Claude, or Gemini
+1. Visit ChatGPT, Claude, Gemini, or Grok
 2. Click the **My Chat Faces** icon in the Chrome toolbar
 3. Pick a background or click **+** to upload your own
 4. Click **Remove Background** to revert to the default look

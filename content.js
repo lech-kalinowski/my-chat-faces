@@ -10,6 +10,8 @@ function detectSite() {
   if (host === "chatgpt.com" || host === "chat.openai.com") return "chatgpt";
   if (host === "claude.ai") return "claude";
   if (host === "gemini.google.com") return "gemini";
+  if (host === "grok.com") return "grok";
+  if (host === "x.com" && location.pathname.startsWith("/i/grok")) return "grok";
   return null;
 }
 

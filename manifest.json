@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "My Chat Faces",
   "version": "1.0.0",
-  "description": "Choose a custom background for your favorite AI chat interfaces — ChatGPT, Claude, and Gemini.",
+  "description": "Choose a custom background for your favorite AI chat interfaces — ChatGPT, Claude, Gemini, and Grok.",
   "permissions": ["storage", "activeTab"],
   "action": {
     "default_popup": "popup.html",
@@ -23,7 +23,9 @@
         "https://chatgpt.com/*",
         "https://chat.openai.com/*",
         "https://claude.ai/*",
-        "https://gemini.google.com/*"
+        "https://gemini.google.com/*",
+        "https://grok.com/*",
+        "https://x.com/i/grok*"
       ],
       "js": ["content.js"],
       "css": ["content.css"],
@@ -37,7 +39,9 @@
         "https://chatgpt.com/*",
         "https://chat.openai.com/*",
         "https://claude.ai/*",
-        "https://gemini.google.com/*"
+        "https://gemini.google.com/*",
+        "https://grok.com/*",
+        "https://x.com/i/grok*"
       ]
     }
   ]
