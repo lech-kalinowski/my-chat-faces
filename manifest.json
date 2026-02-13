@@ -41,7 +41,7 @@
         "https://claude.ai/*",
         "https://gemini.google.com/*",
         "https://grok.com/*",
-        "https://x.com/i/*"
+        "https://x.com/*"
       ]
     }
   ]
