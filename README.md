@@ -68,6 +68,10 @@ To change a previously uploaded custom image, hover over the Custom card and cli
 
 Contributions are welcome! Feel free to open issues or submit pull requests.
 
+## Roadmap
+
+See the feature release roadmap in [ROADMAP.md](ROADMAP.md).
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
