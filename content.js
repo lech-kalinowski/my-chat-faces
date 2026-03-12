@@ -1,10 +1,17 @@
-// ── ChatFaces Content Script ──
-// Sets background via CSS custom properties on <html>.
-// Uses ::before pseudo-element for fade animation.
-
 const ACTIVE_CLASS = "chatfaces-active";
+const STYLE_SETTINGS_KEY = "chatfaces_ui_settings";
+const DEFAULT_STYLE_SETTINGS = {
+  userBubbleColor: "#227864",
+  assistantBubbleColor: "#1e1e32",
+  textColor: "#e8e8ee",
+  surfaceOpacity: 55,
+  backgroundBrightness: 100,
+};
 
-// ── Detect which site we're on ──
+const html = document.documentElement;
+let currentBackground = null;
+let customStyleEl = null;
+
 function detectSite() {
   const host = location.hostname;
   if (host === "chatgpt.com" || host === "chat.openai.com") return "chatgpt";
@@ -15,7 +22,101 @@ function detectSite() {
   return null;
 }
 
-// ── Resolve the image URL (bundled preset or custom data URL) ──
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function normalizeHexColor(value, fallback) {
+  if (typeof value !== "string") return fallback;
+
+  const trimmed = value.trim();
+  if (/^#[0-9a-fA-F]{6}$/.test(trimmed)) return trimmed.toLowerCase();
+
+  return fallback;
+}
+
+function normalizeStyleSettings(settings = {}) {
+  return {
+    userBubbleColor: normalizeHexColor(
+      settings.userBubbleColor,
+      DEFAULT_STYLE_SETTINGS.userBubbleColor
+    ),
+    assistantBubbleColor: normalizeHexColor(
+      settings.assistantBubbleColor,
+      DEFAULT_STYLE_SETTINGS.assistantBubbleColor
+    ),
+    textColor: normalizeHexColor(settings.textColor, DEFAULT_STYLE_SETTINGS.textColor),
+    surfaceOpacity: clamp(
+      Number.isFinite(Number(settings.surfaceOpacity))
+        ? Number(settings.surfaceOpacity)
+        : DEFAULT_STYLE_SETTINGS.surfaceOpacity,
+      25,
+      95
+    ),
+    backgroundBrightness: clamp(
+      Number.isFinite(Number(settings.backgroundBrightness))
+        ? Number(settings.backgroundBrightness)
+        : DEFAULT_STYLE_SETTINGS.backgroundBrightness,
+      40,
+      140
+    ),
+  };
+}
+
+function hexToRgb(hex) {
+  const value = hex.replace("#", "");
+
+  return {
+    r: parseInt(value.slice(0, 2), 16),
+    g: parseInt(value.slice(2, 4), 16),
+    b: parseInt(value.slice(4, 6), 16),
+  };
+}
+
+function toRgba(hex, opacity) {
+  const { r, g, b } = hexToRgb(hex);
+  return `rgba(${r}, ${g}, ${b}, ${opacity.toFixed(2)})`;
+}
+
+function applyStyleSettings(settings) {
+  const normalized = normalizeStyleSettings(settings);
+  const surfaceOpacity = normalized.surfaceOpacity / 100;
+  const elevatedSurfaceOpacity = Math.min(surfaceOpacity + 0.05, 0.95);
+
+  html.style.setProperty(
+    "--chatfaces-user-bubble-bg",
+    toRgba(normalized.userBubbleColor, surfaceOpacity)
+  );
+  html.style.setProperty(
+    "--chatfaces-assistant-bubble-bg",
+    toRgba(normalized.assistantBubbleColor, elevatedSurfaceOpacity)
+  );
+  html.style.setProperty(
+    "--chatfaces-input-bg",
+    toRgba(normalized.assistantBubbleColor, Math.min(surfaceOpacity + 0.08, 0.95))
+  );
+  html.style.setProperty(
+    "--chatfaces-sidebar-bg",
+    toRgba(normalized.assistantBubbleColor, elevatedSurfaceOpacity)
+  );
+  html.style.setProperty(
+    "--chatfaces-bg-brightness",
+    `${(normalized.backgroundBrightness / 100).toFixed(2)}`
+  );
+  html.style.setProperty("--chatfaces-text-color", normalized.textColor);
+  html.style.setProperty("--chatfaces-sidebar-text-color", normalized.textColor);
+  html.style.setProperty(
+    "--chatfaces-hover-bg",
+    `rgba(255, 255, 255, ${clamp(surfaceOpacity * 0.18, 0.06, 0.18).toFixed(2)})`
+  );
+}
+
+function loadStyleSettings() {
+  chrome.storage.local.get(STYLE_SETTINGS_KEY, (data) => {
+    applyStyleSettings(data[STYLE_SETTINGS_KEY]);
+  });
+}
+
 function resolveImageUrl(bgName, callback) {
   if (bgName === "custom") {
     chrome.storage.local.get("chatfaces_custom_data", (data) => {
@@ -26,9 +127,6 @@ function resolveImageUrl(bgName, callback) {
   }
 }
 
-const html = document.documentElement;
-
-// ── Fade helpers ──
 function fadeIn() {
   html.style.setProperty("--chatfaces-opacity", "1");
 }
@@ -36,38 +134,31 @@ function fadeIn() {
 function fadeOut() {
   return new Promise((resolve) => {
     html.style.setProperty("--chatfaces-opacity", "0");
-    // Wait for the transition to finish
+
     const onEnd = () => {
       html.removeEventListener("transitionend", onEnd);
       resolve();
     };
+
     html.addEventListener("transitionend", onEnd);
-    // Fallback timeout in case transitionend doesn't fire
     setTimeout(resolve, 2200);
   });
 }
 
-// ── Set the background image on the ::before pseudo-element ──
-// For data URLs (custom), inject a <style> tag since CSS vars can choke on long values.
-let customStyleEl = null;
-
 function setBgImage(url) {
-  // Try CSS variable first (works for short extension URLs)
   html.style.setProperty("--chatfaces-bg", `url("${url}")`);
 
-  // For data URLs, also inject a direct style override to be safe
   if (url.startsWith("data:")) {
     if (!customStyleEl) {
       customStyleEl = document.createElement("style");
       customStyleEl.id = "chatfaces-custom-style";
       document.head.appendChild(customStyleEl);
     }
-    customStyleEl.textContent = `html.chatfaces-active::before { background-image: url("${url}") !important; }`;
-  } else {
-    // Remove injected style if switching back to a preset
-    if (customStyleEl) {
-      customStyleEl.textContent = "";
-    }
+
+    customStyleEl.textContent =
+      `html.chatfaces-active::before { background-image: url("${url}") !important; }`;
+  } else if (customStyleEl) {
+    customStyleEl.textContent = "";
   }
 }
 
@@ -78,8 +169,9 @@ function clearBgImage() {
   }
 }
 
-// ── Apply background ──
 async function applyBackground(bgName) {
+  currentBackground = bgName || null;
+
   if (!bgName) {
     removeBackground();
     return;
@@ -91,14 +183,12 @@ async function applyBackground(bgName) {
     if (!url) return;
 
     if (isAlreadyActive) {
-      // Switching: fade out, swap image, fade in
       await fadeOut();
       setBgImage(url);
       const img = new Image();
       img.onload = () => requestAnimationFrame(() => fadeIn());
       img.src = url;
     } else {
-      // First apply: set image, add class, then fade in
       setBgImage(url);
       html.classList.add(ACTIVE_CLASS);
       const img = new Image();
@@ -108,7 +198,6 @@ async function applyBackground(bgName) {
   });
 }
 
-// ── Remove background ──
 async function removeBackground() {
   if (!html.classList.contains(ACTIVE_CLASS)) return;
 
@@ -118,12 +207,12 @@ async function removeBackground() {
   html.style.removeProperty("--chatfaces-opacity");
 }
 
-// ── Initialize ──
 function init() {
   const site = detectSite();
   if (!site) return;
 
   html.setAttribute("data-chatfaces-site", site);
+  loadStyleSettings();
 
   chrome.storage.sync.get("chatfaces_bg", (data) => {
     applyBackground(data.chatfaces_bg || null);
@@ -133,6 +222,25 @@ function init() {
     if (area === "sync" && changes.chatfaces_bg) {
       applyBackground(changes.chatfaces_bg.newValue || null);
     }
+
+    if (area === "local" && changes[STYLE_SETTINGS_KEY]) {
+      applyStyleSettings(changes[STYLE_SETTINGS_KEY].newValue);
+    }
+
+    if (
+      area === "local" &&
+      changes.chatfaces_custom_data &&
+      currentBackground === "custom"
+    ) {
+      applyBackground("custom");
+    }
+  });
+
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message?.type !== "chatfaces:apply-style-settings") return;
+
+    applyStyleSettings(message.settings);
+    sendResponse({ ok: true });
   });
 }
 

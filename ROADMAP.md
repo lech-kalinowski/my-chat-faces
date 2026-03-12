@@ -1,6 +1,6 @@
 # Feature Release Roadmap
 
-This roadmap is for **My Chat Faces** after `v1.0.0` (current manifest version).
+This roadmap covers the post-`v1.0.0` feature plan. Current extension version: `v1.2.0`.
 
 ## North Star
 

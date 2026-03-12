@@ -2,6 +2,17 @@
    ChatFaces – Background on <html> + Transparency
    ══════════════════════════════════════════════════ */
 
+html {
+  --chatfaces-user-bubble-bg: rgba(34, 120, 100, 0.55);
+  --chatfaces-assistant-bubble-bg: rgba(30, 30, 50, 0.6);
+  --chatfaces-input-bg: rgba(15, 15, 30, 0.55);
+  --chatfaces-sidebar-bg: rgba(30, 30, 50, 0.6);
+  --chatfaces-bg-brightness: 1;
+  --chatfaces-text-color: #e8e8ee;
+  --chatfaces-sidebar-text-color: #e8e8f0;
+  --chatfaces-hover-bg: rgba(255, 255, 255, 0.08);
+}
+
 /* ── Background via ::before pseudo-element for animation ── */
 html.chatfaces-active {
   position: relative !important;
@@ -15,6 +26,7 @@ html.chatfaces-active::before {
   background: var(--chatfaces-bg) center center / cover no-repeat fixed;
   background-color: #0a0a14;
   opacity: var(--chatfaces-opacity, 0);
+  filter: brightness(var(--chatfaces-bg-brightness));
   transition: opacity 2s cubic-bezier(0.25, 0, 0.15, 1);
   pointer-events: none;
 }
@@ -88,10 +100,24 @@ html.chatfaces-active body *::after {
 /* ══════════════════════════════════════════════════
    Sidebar — light frosted glass tint
    ══════════════════════════════════════════════════ */
-html.chatfaces-active nav {
-  background-color: rgba(10, 10, 20, 0.25) !important;
+html.chatfaces-active nav,
+html.chatfaces-active aside,
+html.chatfaces-active [class*="sidebar"],
+html.chatfaces-active [data-testid*="sidebar"],
+html.chatfaces-active [data-testid*="history"],
+html.chatfaces-active [data-sidebar] {
+  background-color: var(--chatfaces-sidebar-bg) !important;
   backdrop-filter: blur(4px) !important;
   -webkit-backdrop-filter: blur(4px) !important;
+}
+
+html.chatfaces-active nav > *,
+html.chatfaces-active aside > *,
+html.chatfaces-active [class*="sidebar"] > *,
+html.chatfaces-active [data-testid*="sidebar"] > *,
+html.chatfaces-active [data-testid*="history"] > *,
+html.chatfaces-active [data-sidebar] > * {
+  background-color: transparent !important;
 }
 
 /* ══════════════════════════════════════════════════
@@ -102,7 +128,7 @@ html.chatfaces-active nav {
 
 /* User bubble — tinted green, right-aligned tail */
 html.chatfaces-active[data-chatfaces-site="chatgpt"] article[data-testid^="conversation-turn-"]:nth-child(odd) {
-  background: rgba(34, 120, 100, 0.55) !important;
+  background: var(--chatfaces-user-bubble-bg) !important;
   border-radius: 18px 18px 4px 18px !important;
   margin-left: auto !important;
   margin-right: 16px !important;
@@ -115,7 +141,7 @@ html.chatfaces-active[data-chatfaces-site="chatgpt"] article[data-testid^="conve
 
 /* Assistant bubble — dark, left-aligned tail */
 html.chatfaces-active[data-chatfaces-site="chatgpt"] article[data-testid^="conversation-turn-"]:nth-child(even) {
-  background: rgba(30, 30, 50, 0.60) !important;
+  background: var(--chatfaces-assistant-bubble-bg) !important;
   border-radius: 18px 18px 18px 4px !important;
   margin-right: auto !important;
   margin-left: 16px !important;
@@ -128,7 +154,7 @@ html.chatfaces-active[data-chatfaces-site="chatgpt"] article[data-testid^="conve
 
 /* Input bar */
 html.chatfaces-active[data-chatfaces-site="chatgpt"] form {
-  background: rgba(15, 15, 30, 0.55) !important;
+  background: var(--chatfaces-input-bg) !important;
   border-radius: 16px !important;
   backdrop-filter: blur(6px) !important;
   -webkit-backdrop-filter: blur(6px) !important;
@@ -138,7 +164,7 @@ html.chatfaces-active[data-chatfaces-site="chatgpt"] form {
 
 html.chatfaces-active[data-chatfaces-site="claude"] [data-testid="user-message"],
 html.chatfaces-active[data-chatfaces-site="claude"] .font-user-message {
-  background: rgba(34, 120, 100, 0.55) !important;
+  background: var(--chatfaces-user-bubble-bg) !important;
   border-radius: 18px 18px 4px 18px !important;
   padding: 12px 16px !important;
   margin-bottom: 8px !important;
@@ -148,7 +174,7 @@ html.chatfaces-active[data-chatfaces-site="claude"] .font-user-message {
 
 html.chatfaces-active[data-chatfaces-site="claude"] [data-testid="assistant-message"],
 html.chatfaces-active[data-chatfaces-site="claude"] .font-claude-message {
-  background: rgba(30, 30, 50, 0.60) !important;
+  background: var(--chatfaces-assistant-bubble-bg) !important;
   border-radius: 18px 18px 18px 4px !important;
   padding: 12px 16px !important;
   margin-bottom: 8px !important;
@@ -158,7 +184,7 @@ html.chatfaces-active[data-chatfaces-site="claude"] .font-claude-message {
 
 html.chatfaces-active[data-chatfaces-site="claude"] [class*="ProseMirror"],
 html.chatfaces-active[data-chatfaces-site="claude"] fieldset {
-  background: rgba(15, 15, 30, 0.55) !important;
+  background: var(--chatfaces-input-bg) !important;
   border-radius: 16px !important;
   backdrop-filter: blur(6px) !important;
   -webkit-backdrop-filter: blur(6px) !important;
@@ -168,7 +194,7 @@ html.chatfaces-active[data-chatfaces-site="claude"] fieldset {
 
 html.chatfaces-active[data-chatfaces-site="gemini"] .query-content,
 html.chatfaces-active[data-chatfaces-site="gemini"] .user-query {
-  background: rgba(34, 120, 100, 0.55) !important;
+  background: var(--chatfaces-user-bubble-bg) !important;
   border-radius: 18px 18px 4px 18px !important;
   padding: 12px 16px !important;
   margin-bottom: 8px !important;
@@ -179,7 +205,7 @@ html.chatfaces-active[data-chatfaces-site="gemini"] .user-query {
 html.chatfaces-active[data-chatfaces-site="gemini"] message-content,
 html.chatfaces-active[data-chatfaces-site="gemini"] .response-container-content,
 html.chatfaces-active[data-chatfaces-site="gemini"] .conversation-turn {
-  background: rgba(30, 30, 50, 0.60) !important;
+  background: var(--chatfaces-assistant-bubble-bg) !important;
   border-radius: 18px 18px 18px 4px !important;
   padding: 12px 16px !important;
   margin-bottom: 8px !important;
@@ -189,7 +215,7 @@ html.chatfaces-active[data-chatfaces-site="gemini"] .conversation-turn {
 
 html.chatfaces-active[data-chatfaces-site="gemini"] .input-area-container,
 html.chatfaces-active[data-chatfaces-site="gemini"] rich-textarea {
-  background: rgba(15, 15, 30, 0.55) !important;
+  background: var(--chatfaces-input-bg) !important;
   border-radius: 16px !important;
   backdrop-filter: blur(6px) !important;
   -webkit-backdrop-filter: blur(6px) !important;
@@ -207,21 +233,55 @@ html.chatfaces-active .font-claude-message *,
 html.chatfaces-active .font-user-message *,
 html.chatfaces-active message-content *,
 html.chatfaces-active .conversation-turn * {
-  color: #e8e8ee !important;
+  color: var(--chatfaces-text-color) !important;
 }
 
 /* Sidebar text + icons */
 html.chatfaces-active nav *,
 html.chatfaces-active aside *,
 html.chatfaces-active [class*="sidebar"] *,
+html.chatfaces-active [data-testid*="sidebar"] *,
+html.chatfaces-active [data-testid*="history"] *,
+html.chatfaces-active [data-sidebar] *,
 html.chatfaces-active mat-sidenav * {
-  color: #e8e8f0 !important;
+  color: var(--chatfaces-sidebar-text-color) !important;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7) !important;
+}
+
+html.chatfaces-active nav svg,
+html.chatfaces-active aside svg,
+html.chatfaces-active [class*="sidebar"] svg,
+html.chatfaces-active [data-testid*="sidebar"] svg,
+html.chatfaces-active [data-testid*="history"] svg,
+html.chatfaces-active [data-sidebar] svg {
+  color: var(--chatfaces-sidebar-text-color) !important;
+}
+
+html.chatfaces-active textarea,
+html.chatfaces-active input,
+html.chatfaces-active [contenteditable="true"] {
+  color: var(--chatfaces-text-color) !important;
+  caret-color: var(--chatfaces-text-color) !important;
 }
 
 /* Sidebar hover */
 html.chatfaces-active nav a:hover,
 html.chatfaces-active nav li:hover,
-html.chatfaces-active nav button:hover {
-  background-color: rgba(255, 255, 255, 0.08) !important;
+html.chatfaces-active nav button:hover,
+html.chatfaces-active aside a:hover,
+html.chatfaces-active aside li:hover,
+html.chatfaces-active aside button:hover,
+html.chatfaces-active [class*="sidebar"] a:hover,
+html.chatfaces-active [class*="sidebar"] li:hover,
+html.chatfaces-active [class*="sidebar"] button:hover,
+html.chatfaces-active [data-testid*="sidebar"] a:hover,
+html.chatfaces-active [data-testid*="sidebar"] li:hover,
+html.chatfaces-active [data-testid*="sidebar"] button:hover,
+html.chatfaces-active [data-testid*="history"] a:hover,
+html.chatfaces-active [data-testid*="history"] li:hover,
+html.chatfaces-active [data-testid*="history"] button:hover,
+html.chatfaces-active [data-sidebar] a:hover,
+html.chatfaces-active [data-sidebar] li:hover,
+html.chatfaces-active [data-sidebar] button:hover {
+  background-color: var(--chatfaces-hover-bg) !important;
 }

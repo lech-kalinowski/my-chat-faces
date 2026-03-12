@@ -47,6 +47,109 @@
 
     <input type="file" id="file-input" accept="image/*" hidden>
 
+    <section class="settings-panel" aria-labelledby="appearance-title">
+      <div class="settings-header">
+        <div>
+          <h2 class="settings-title" id="appearance-title">Chat Appearance</h2>
+          <p class="settings-copy">Tune bubble colors, opacity, and background brightness for better contrast.</p>
+        </div>
+        <button type="button" id="reset-style-btn" class="ghost-btn">Reset</button>
+      </div>
+
+      <div class="chat-preview" id="chat-preview" aria-hidden="true">
+        <div class="preview-bubble preview-bubble-user" id="preview-user-bubble">You</div>
+        <div class="preview-bubble preview-bubble-assistant" id="preview-assistant-bubble">Assistant</div>
+      </div>
+
+      <div class="control-block">
+        <div class="control-heading">
+          <label class="control-label" for="surface-opacity">Surface opacity</label>
+          <output class="control-value" id="surface-opacity-value" for="surface-opacity">55%</output>
+        </div>
+        <input
+          id="surface-opacity"
+          class="range-slider"
+          type="range"
+          min="25"
+          max="95"
+          step="1"
+          value="55"
+        >
+      </div>
+
+      <div class="control-block">
+        <div class="control-heading">
+          <label class="control-label" for="background-brightness">Background brightness</label>
+          <output class="control-value" id="background-brightness-value" for="background-brightness">100%</output>
+        </div>
+        <input
+          id="background-brightness"
+          class="range-slider"
+          type="range"
+          min="40"
+          max="140"
+          step="1"
+          value="100"
+        >
+      </div>
+
+      <div class="control-block">
+        <div class="control-heading">
+          <label class="control-label" for="user-bubble-color">User bubble</label>
+          <span class="control-value" id="user-bubble-color-value">#227864</span>
+        </div>
+        <div class="color-row">
+          <input id="user-bubble-color" class="color-input" type="color" value="#227864">
+          <div class="palette" aria-label="User bubble palette">
+            <button type="button" class="swatch" data-target="userBubbleColor" data-color="#227864" style="--swatch-color: #227864;"></button>
+            <button type="button" class="swatch" data-target="userBubbleColor" data-color="#845EC2" style="--swatch-color: #845EC2;"></button>
+            <button type="button" class="swatch" data-target="userBubbleColor" data-color="#C34A36" style="--swatch-color: #C34A36;"></button>
+            <button type="button" class="swatch" data-target="userBubbleColor" data-color="#0081CF" style="--swatch-color: #0081CF;"></button>
+            <button type="button" class="swatch" data-target="userBubbleColor" data-color="#F9A826" style="--swatch-color: #F9A826;"></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="control-block">
+        <div class="control-heading">
+          <label class="control-label" for="assistant-bubble-color">Assistant bubble</label>
+          <span class="control-value" id="assistant-bubble-color-value">#1E1E32</span>
+        </div>
+        <div class="color-row">
+          <input id="assistant-bubble-color" class="color-input" type="color" value="#1E1E32">
+          <div class="palette" aria-label="Assistant bubble palette">
+            <button type="button" class="swatch" data-target="assistantBubbleColor" data-color="#1E1E32" style="--swatch-color: #1E1E32;"></button>
+            <button type="button" class="swatch" data-target="assistantBubbleColor" data-color="#16324F" style="--swatch-color: #16324F;"></button>
+            <button type="button" class="swatch" data-target="assistantBubbleColor" data-color="#3B1F2B" style="--swatch-color: #3B1F2B;"></button>
+            <button type="button" class="swatch" data-target="assistantBubbleColor" data-color="#2D3A1F" style="--swatch-color: #2D3A1F;"></button>
+            <button type="button" class="swatch" data-target="assistantBubbleColor" data-color="#3B2F63" style="--swatch-color: #3B2F63;"></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="control-block">
+        <div class="control-heading">
+          <label class="control-label" for="text-color">Text color</label>
+          <span class="control-value" id="text-color-value">#E8E8EE</span>
+        </div>
+        <div class="color-row">
+          <input id="text-color" class="color-input" type="color" value="#E8E8EE">
+          <div class="palette" aria-label="Text color palette">
+            <button type="button" class="swatch" data-target="textColor" data-color="#E8E8EE" style="--swatch-color: #E8E8EE;"></button>
+            <button type="button" class="swatch" data-target="textColor" data-color="#FFFFFF" style="--swatch-color: #FFFFFF;"></button>
+            <button type="button" class="swatch" data-target="textColor" data-color="#FFE9C7" style="--swatch-color: #FFE9C7;"></button>
+            <button type="button" class="swatch" data-target="textColor" data-color="#D9F4FF" style="--swatch-color: #D9F4FF;"></button>
+            <button type="button" class="swatch" data-target="textColor" data-color="#D8FFD8" style="--swatch-color: #D8FFD8;"></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-actions">
+        <p class="settings-hint">Preview chat colors here, then apply colors, opacity, and brightness to the page.</p>
+        <button type="button" id="apply-style-btn" class="apply-btn" disabled>Apply Style</button>
+      </div>
+    </section>
+
     <button id="remove-btn" class="remove-btn" disabled>Remove Background</button>
   </div>
 
