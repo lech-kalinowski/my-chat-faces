@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "My Chat Faces",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Choose custom backgrounds, chat colors, opacity, and brightness for ChatGPT, Claude, Gemini, and Grok.",
   "permissions": ["storage"],
   "action": {

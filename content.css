@@ -126,30 +126,46 @@ html.chatfaces-active [data-sidebar] > * {
 
 /* ═══ ChatGPT ═══ */
 
+html.chatfaces-active[data-chatfaces-site="chatgpt"] [data-chatfaces-bubble="true"] {
+  display: block !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: min(85%, 920px) !important;
+  margin-bottom: 8px !important;
+  padding: 12px 16px !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+  box-shadow: 0 10px 28px rgba(4, 8, 18, 0.18) !important;
+  white-space: normal !important;
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+}
+
+html.chatfaces-active[data-chatfaces-site="chatgpt"] [data-chatfaces-bubble="true"] * {
+  white-space: normal !important;
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+}
+
 /* User bubble — tinted green, right-aligned tail */
-html.chatfaces-active[data-chatfaces-site="chatgpt"] article[data-testid^="conversation-turn-"]:nth-child(odd) {
+html.chatfaces-active[data-chatfaces-site="chatgpt"] [data-chatfaces-bubble="true"][data-chatfaces-role="user"] {
   background: var(--chatfaces-user-bubble-bg) !important;
   border-radius: 18px 18px 4px 18px !important;
   margin-left: auto !important;
   margin-right: 16px !important;
-  max-width: 80% !important;
-  padding: 12px 16px !important;
-  margin-bottom: 8px !important;
-  backdrop-filter: blur(6px) !important;
-  -webkit-backdrop-filter: blur(6px) !important;
+  min-width: min(180px, calc(100% - 32px)) !important;
 }
 
 /* Assistant bubble — dark, left-aligned tail */
-html.chatfaces-active[data-chatfaces-site="chatgpt"] article[data-testid^="conversation-turn-"]:nth-child(even) {
+html.chatfaces-active[data-chatfaces-site="chatgpt"] [data-chatfaces-bubble="true"][data-chatfaces-role="assistant"] {
   background: var(--chatfaces-assistant-bubble-bg) !important;
   border-radius: 18px 18px 18px 4px !important;
   margin-right: auto !important;
   margin-left: 16px !important;
-  max-width: 85% !important;
-  padding: 12px 16px !important;
-  margin-bottom: 8px !important;
-  backdrop-filter: blur(6px) !important;
-  -webkit-backdrop-filter: blur(6px) !important;
 }
 
 /* Input bar */
@@ -227,6 +243,7 @@ html.chatfaces-active[data-chatfaces-site="gemini"] rich-textarea {
 
 /* Chat message text */
 html.chatfaces-active article[data-testid^="conversation-turn"] *,
+html.chatfaces-active [data-chatfaces-bubble="true"] *,
 html.chatfaces-active [data-testid="user-message"] *,
 html.chatfaces-active [data-testid="assistant-message"] *,
 html.chatfaces-active .font-claude-message *,

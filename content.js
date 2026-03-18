@@ -11,6 +11,8 @@ const DEFAULT_STYLE_SETTINGS = {
 const html = document.documentElement;
 let currentBackground = null;
 let customStyleEl = null;
+let chatGptBubbleObserver = null;
+let chatGptBubbleSyncScheduled = false;
 
 function detectSite() {
   const host = location.hostname;
@@ -117,6 +119,88 @@ function loadStyleSettings() {
   });
 }
 
+function getChatGptTurnSelector() {
+  return [
+    'article[data-testid^="conversation-turn-"]',
+    'article[data-testid*="conversation-turn"]',
+    'div[data-testid^="conversation-turn-"]',
+    'div[data-testid*="conversation-turn"]',
+  ].join(", ");
+}
+
+function findChatGptBubbleTarget(roleNode) {
+  return roleNode.closest(getChatGptTurnSelector()) || roleNode;
+}
+
+function clearChatGptBubbleMarkers() {
+  document
+    .querySelectorAll('[data-chatfaces-bubble="true"]')
+    .forEach((node) => {
+      node.removeAttribute("data-chatfaces-bubble");
+      node.removeAttribute("data-chatfaces-role");
+    });
+}
+
+function syncChatGptBubbleMarkers() {
+  if (detectSite() !== "chatgpt") return;
+
+  clearChatGptBubbleMarkers();
+
+  const roleNodes = document.querySelectorAll(
+    '[data-message-author-role="assistant"], [data-message-author-role="user"]'
+  );
+  const taggedTargets = new Set();
+
+  roleNodes.forEach((roleNode) => {
+    const role = roleNode.getAttribute("data-message-author-role");
+    if (role !== "assistant" && role !== "user") return;
+
+    const target = findChatGptBubbleTarget(roleNode);
+    if (!target || taggedTargets.has(target)) return;
+
+    target.setAttribute("data-chatfaces-bubble", "true");
+    target.setAttribute("data-chatfaces-role", role);
+    taggedTargets.add(target);
+  });
+
+  if (taggedTargets.size > 0) return;
+
+  document
+    .querySelectorAll(getChatGptTurnSelector())
+    .forEach((turn, index) => {
+      turn.setAttribute("data-chatfaces-bubble", "true");
+      turn.setAttribute(
+        "data-chatfaces-role",
+        index % 2 === 0 ? "assistant" : "user"
+      );
+    });
+}
+
+function scheduleChatGptBubbleSync() {
+  if (chatGptBubbleSyncScheduled) return;
+
+  chatGptBubbleSyncScheduled = true;
+  requestAnimationFrame(() => {
+    chatGptBubbleSyncScheduled = false;
+    syncChatGptBubbleMarkers();
+  });
+}
+
+function startChatGptBubbleObserver() {
+  if (detectSite() !== "chatgpt" || chatGptBubbleObserver) return;
+
+  scheduleChatGptBubbleSync();
+
+  chatGptBubbleObserver = new MutationObserver(() => {
+    scheduleChatGptBubbleSync();
+  });
+
+  chatGptBubbleObserver.observe(document.body, {
+    childList: true,
+    subtree: true,
+  });
+}
+
 function resolveImageUrl(bgName, callback) {
   if (bgName === "custom") {
     chrome.storage.local.get("chatfaces_custom_data", (data) => {
@@ -213,6 +297,10 @@ function init() {
 
   html.setAttribute("data-chatfaces-site", site);
   loadStyleSettings();
+
+  if (site === "chatgpt") {
+    startChatGptBubbleObserver();
+  }
 
   chrome.storage.sync.get("chatfaces_bg", (data) => {
     applyBackground(data.chatfaces_bg || null);
