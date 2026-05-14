@@ -362,6 +362,36 @@ body {
   transition: transform 0.15s ease, border-color 0.2s ease, background 0.2s ease;
 }
 
+.preset-chip-featured {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 12px 14px;
+  border-color: rgba(255, 255, 255, 0.2);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.16), rgba(114, 230, 200, 0.18)),
+    rgba(255, 255, 255, 0.08);
+}
+
+.preset-chip-title {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.preset-chip-note {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: normal;
+  line-height: 1.35;
+  color: #f5f7ff;
+  opacity: 0.94;
+  text-transform: none;
+}
+
 .preset-chip:hover {
   transform: translateY(-1px);
   border-color: rgba(114, 230, 200, 0.46);
@@ -372,6 +402,12 @@ body {
   background: linear-gradient(135deg, rgba(114, 230, 200, 0.22), rgba(114, 230, 200, 0.08));
   color: #f6fffc;
   box-shadow: 0 0 0 1px rgba(114, 230, 200, 0.14);
+}
+
+.preset-chip-featured.active {
+  background:
+    linear-gradient(135deg, rgba(114, 230, 200, 0.32), rgba(114, 230, 200, 0.12)),
+    rgba(255, 255, 255, 0.08);
 }
 
 .control-heading {

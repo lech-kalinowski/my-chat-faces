@@ -16,6 +16,7 @@ const DEFAULT_STYLE_SETTINGS = {
 
 const ACCESSIBILITY_PRESET_LABELS = {
   default: "Balanced",
+  lowVision: "Low Vision",
   largeType: "Large Type",
   highContrast: "High Contrast",
   warmContrast: "Warm Contrast",
@@ -24,11 +25,23 @@ const ACCESSIBILITY_PRESET_LABELS = {
 };
 
 const ACCESSIBILITY_PRESET_BACKGROUNDS = {
+  lowVision: "#050816",
   paper: DEFAULT_SOLID_BACKGROUND_COLOR,
 };
 
 const ACCESSIBILITY_PRESETS = {
   default: { ...DEFAULT_STYLE_SETTINGS, accessibilityPreset: "default" },
+  lowVision: {
+    ...DEFAULT_STYLE_SETTINGS,
+    accessibilityPreset: "lowVision",
+    userBubbleColor: "#0f4bb8",
+    assistantBubbleColor: "#111827",
+    textColor: "#ffffff",
+    surfaceOpacity: 94,
+    backgroundBrightness: 100,
+    messageTextSize: 24,
+    uiTextScale: 130,
+  },
   largeType: {
     ...DEFAULT_STYLE_SETTINGS,
     accessibilityPreset: "largeType",
@@ -118,6 +131,8 @@ let currentStyleSettings = { ...DEFAULT_STYLE_SETTINGS };
 let draftStyleSettings = { ...DEFAULT_STYLE_SETTINGS };
 let currentBackgroundChoice = null;
 let currentSolidBackgroundColor = DEFAULT_SOLID_BACKGROUND_COLOR;
+let pendingBackgroundChoice = null;
+let pendingSolidBackgroundColor = DEFAULT_SOLID_BACKGROUND_COLOR;
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -222,30 +237,97 @@ function styleSettingsEqual(left, right) {
   );
 }
 
-function setActive(bgName, solidColor = currentSolidBackgroundColor) {
+function backgroundSettingsEqual(leftChoice, leftColor, rightChoice, rightColor) {
+  return (
+    normalizeBackgroundChoice(leftChoice) === normalizeBackgroundChoice(rightChoice) &&
+    normalizeHexColor(leftColor, DEFAULT_SOLID_BACKGROUND_COLOR) ===
+      normalizeHexColor(rightColor, DEFAULT_SOLID_BACKGROUND_COLOR)
+  );
+}
+
+function backgroundSettingsDirty() {
+  if (pendingBackgroundChoice === null) return false;
+
+  return !backgroundSettingsEqual(
+    pendingBackgroundChoice,
+    pendingSolidBackgroundColor,
+    currentBackgroundChoice,
+    currentSolidBackgroundColor
+  );
+}
+
+function renderBackgroundState(
+  bgName = currentBackgroundChoice,
+  solidColor = currentSolidBackgroundColor
+) {
+  const normalizedBackground = normalizeBackgroundChoice(bgName);
+  const normalizedColor = normalizeHexColor(
+    solidColor,
+    DEFAULT_SOLID_BACKGROUND_COLOR
+  );
+
+  cards.forEach((card) => {
+    card.classList.toggle("active", card.dataset.bg === normalizedBackground);
+  });
+  removeBtn.disabled = !normalizedBackground;
+
+  solidBackgroundInput.value = normalizedColor;
+  solidBackgroundValue.textContent = normalizedColor.toUpperCase();
+  solidBackgroundInput.classList.toggle("active", normalizedBackground === "solid");
+
+  solidSwatches.forEach((swatch) => {
+    const swatchColor = normalizeHexColor(swatch.dataset.color, "");
+    swatch.classList.toggle(
+      "active",
+      normalizedBackground === "solid" && normalizedColor === swatchColor
+    );
+  });
+}
+
+function setCurrentBackground(bgName, solidColor = currentSolidBackgroundColor) {
   currentBackgroundChoice = normalizeBackgroundChoice(bgName);
   currentSolidBackgroundColor = normalizeHexColor(
     solidColor,
     DEFAULT_SOLID_BACKGROUND_COLOR
   );
 
-  cards.forEach((card) => {
-    card.classList.toggle("active", card.dataset.bg === currentBackgroundChoice);
-  });
-  removeBtn.disabled = !currentBackgroundChoice;
+  if (
+    backgroundSettingsEqual(
+      pendingBackgroundChoice,
+      pendingSolidBackgroundColor,
+      currentBackgroundChoice,
+      currentSolidBackgroundColor
+    )
+  ) {
+    pendingBackgroundChoice = null;
+    pendingSolidBackgroundColor = currentSolidBackgroundColor;
+  }
 
-  solidBackgroundInput.value = currentSolidBackgroundColor;
-  solidBackgroundValue.textContent = currentSolidBackgroundColor.toUpperCase();
-  solidBackgroundInput.classList.toggle("active", currentBackgroundChoice === "solid");
+  renderBackgroundState(
+    pendingBackgroundChoice ?? currentBackgroundChoice,
+    pendingBackgroundChoice === null
+      ? currentSolidBackgroundColor
+      : pendingSolidBackgroundColor
+  );
+  syncApplyButton();
+}
 
-  solidSwatches.forEach((swatch) => {
-    const swatchColor = normalizeHexColor(swatch.dataset.color, "");
-    swatch.classList.toggle(
-      "active",
-      currentBackgroundChoice === "solid" &&
-        currentSolidBackgroundColor === swatchColor
-    );
-  });
+function setPendingBackground(bgName, solidColor = currentSolidBackgroundColor) {
+  pendingBackgroundChoice = normalizeBackgroundChoice(bgName);
+  pendingSolidBackgroundColor = normalizeHexColor(
+    solidColor,
+    DEFAULT_SOLID_BACKGROUND_COLOR
+  );
+
+  renderBackgroundState(pendingBackgroundChoice, pendingSolidBackgroundColor);
+  syncApplyButton();
+}
+
+function clearPendingBackground() {
+  pendingBackgroundChoice = null;
+  pendingSolidBackgroundColor = currentSolidBackgroundColor;
+  renderBackgroundState(currentBackgroundChoice, currentSolidBackgroundColor);
+  syncApplyButton();
 }
 
 function showCustomPreview(dataUrl) {
@@ -336,7 +418,9 @@ function renderDraftStyleSettings(settings) {
 }
 
 function syncApplyButton() {
-  const isDirty = !styleSettingsEqual(draftStyleSettings, currentStyleSettings);
+  const isDirty =
+    !styleSettingsEqual(draftStyleSettings, currentStyleSettings) ||
+    backgroundSettingsDirty();
   applyStyleBtn.disabled = !isDirty;
   applyStyleBtn.textContent = isDirty ? "Apply Style" : "Applied";
 }
@@ -375,7 +459,9 @@ function applyAccessibilityPreset(presetKey) {
 
   const recommendedBackground = ACCESSIBILITY_PRESET_BACKGROUNDS[presetKey];
   if (recommendedBackground) {
-    selectSolidBackground(recommendedBackground);
+    setPendingBackground("solid", recommendedBackground);
+  } else {
+    clearPendingBackground();
   }
 }
 
@@ -399,7 +485,7 @@ function sendStyleSettingsToActiveTab(settings) {
   });
 }
 
-function persistDraftStyleSettings() {
+function persistDraftStyleSettings(callback) {
   const nextSettings = normalizeStyleSettings(draftStyleSettings);
 
   chrome.storage.local.set({ [STYLE_SETTINGS_KEY]: nextSettings }, () => {
@@ -408,21 +494,41 @@ function persistDraftStyleSettings() {
     renderDraftStyleSettings(draftStyleSettings);
     syncApplyButton();
     sendStyleSettingsToActiveTab(nextSettings);
+    callback?.();
+  });
+}
+
+function persistPendingBackground(callback) {
+  if (!backgroundSettingsDirty()) {
+    callback?.();
+    return;
+  }
+
+  const nextBackgroundChoice = pendingBackgroundChoice;
+  const nextSolidColor = pendingSolidBackgroundColor;
+
+  chrome.storage.local.set({ [SOLID_BACKGROUND_COLOR_KEY]: nextSolidColor }, () => {
+    chrome.storage.sync.set({ [BACKGROUND_KEY]: nextBackgroundChoice }, () => {
+      setCurrentBackground(nextBackgroundChoice, nextSolidColor);
+      callback?.();
+    });
   });
 }
 
 function selectBackground(bgName) {
+  clearPendingBackground();
   chrome.storage.sync.set({ [BACKGROUND_KEY]: bgName }, () => {
-    setActive(bgName);
+    setCurrentBackground(bgName);
   });
 }
 
 function selectSolidBackground(color) {
   const normalizedColor = normalizeHexColor(color, DEFAULT_SOLID_BACKGROUND_COLOR);
+  clearPendingBackground();
 
   chrome.storage.local.set({ [SOLID_BACKGROUND_COLOR_KEY]: normalizedColor }, () => {
     chrome.storage.sync.set({ [BACKGROUND_KEY]: "solid" }, () => {
-      setActive("solid", normalizedColor);
+      setCurrentBackground("solid", normalizedColor);
     });
   });
 }
@@ -435,7 +541,7 @@ function loadBackgroundChoice() {
     );
 
     chrome.storage.sync.get(BACKGROUND_KEY, (syncData) => {
-      setActive(syncData[BACKGROUND_KEY] || null, solidColor);
+      setCurrentBackground(syncData[BACKGROUND_KEY] || null, solidColor);
     });
   });
 }
@@ -495,8 +601,9 @@ fileInput.addEventListener("change", (event) => {
 });
 
 removeBtn.addEventListener("click", () => {
+  clearPendingBackground();
   chrome.storage.sync.remove(BACKGROUND_KEY, () => {
-    setActive(null, currentSolidBackgroundColor);
+    setCurrentBackground(null, currentSolidBackgroundColor);
   });
 });
 
@@ -553,16 +660,24 @@ solidSwatches.forEach((swatch) => {
 });
 
 resetStyleBtn.addEventListener("click", () => {
+  clearPendingBackground();
   updateDraftStyleSettings(DEFAULT_STYLE_SETTINGS, { preservePreset: true });
 });
 
 applyStyleBtn.addEventListener("click", () => {
-  persistDraftStyleSettings();
+  persistPendingBackground(() => {
+    if (!styleSettingsEqual(draftStyleSettings, currentStyleSettings)) {
+      persistDraftStyleSettings();
+      return;
+    }
+
+    syncApplyButton();
+  });
 });
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === "sync" && changes[BACKGROUND_KEY]) {
-    setActive(changes[BACKGROUND_KEY].newValue || null);
+    setCurrentBackground(changes[BACKGROUND_KEY].newValue || null);
   }
 
   if (area === "local" && changes[CUSTOM_BACKGROUND_DATA_KEY]) {
@@ -570,7 +685,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
   }
 
   if (area === "local" && changes[SOLID_BACKGROUND_COLOR_KEY]) {
-    setActive(
+    setCurrentBackground(
       currentBackgroundChoice,
       changes[SOLID_BACKGROUND_COLOR_KEY].newValue || DEFAULT_SOLID_BACKGROUND_COLOR
     );

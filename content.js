@@ -47,6 +47,7 @@ function normalizeHexColor(value, fallback) {
 function normalizeAccessibilityPreset(value) {
   const validPresets = new Set([
     "default",
+    "lowVision",
     "largeType",
     "highContrast",
     "warmContrast",

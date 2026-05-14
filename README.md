@@ -14,7 +14,7 @@ Pick from three built-in backgrounds (Cyber, Fantasy, Unicorns), switch to a sol
 - **Smooth fade-in animation** — backgrounds appear with a 2-second transition
 - **Per-message readability** — chat messages get a dark translucent panel so text stays readable
 - **Custom chat styling** — adjust bubble colors, text color, panel opacity, and background brightness
-- **Accessibility controls** — increase message text size, scale interface text, and switch between Balanced, Large Type, High Contrast, Warm Contrast, and Paper presets
+- **Accessibility controls** — increase message text size, scale interface text, and switch between Low Vision, Balanced, Large Type, High Contrast, Warm Contrast, and Paper presets
 - **Live switching** — change backgrounds from the popup without reloading the page
 - **Persistent** — your choice is saved and reapplied automatically
 - **Supports 4 AI chat sites:**
