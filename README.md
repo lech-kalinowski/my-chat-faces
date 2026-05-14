@@ -13,6 +13,7 @@ Pick from three built-in backgrounds (Cyber, Fantasy, Unicorns) or upload your o
 - **Smooth fade-in animation** — backgrounds appear with a 2-second transition
 - **Per-message readability** — chat messages get a dark translucent panel so text stays readable
 - **Custom chat styling** — adjust bubble colors, text color, panel opacity, and background brightness
+- **Accessibility controls** — increase message text size, scale interface text, and switch between Balanced, Large Type, High Contrast, Warm Contrast, and Paper presets
 - **Live switching** — change backgrounds from the popup without reloading the page
 - **Persistent** — your choice is saved and reapplied automatically
 - **Supports 4 AI chat sites:**
@@ -34,7 +35,7 @@ Pick from three built-in backgrounds (Cyber, Fantasy, Unicorns) or upload your o
 1. Visit ChatGPT, Claude, Gemini, or Grok
 2. Click the **My Chat Faces** icon in the Chrome toolbar
 3. Pick a background or click **+** to upload your own
-4. Tune chat bubble colors, text color, opacity, and background brightness in the popup, then click **Apply Style**
+4. Tune accessibility presets, text size, chat bubble colors, opacity, and background brightness in the popup, then click **Apply Style**
 5. Click **Remove Background** to revert to the default look
 
 To change a previously uploaded custom image, hover over the Custom card and click **Change**.
@@ -63,7 +64,7 @@ To change a previously uploaded custom image, hover over the Custom card and cli
 - The popup saves your background choice to `chrome.storage.sync` (preset name) or `chrome.storage.local` (custom image data URL and chat style settings)
 - A content script runs on supported AI chat sites, reads the saved choice, and injects a fixed full-screen `div` behind the page content with the selected background image
 - Site-specific CSS overrides make native page backgrounds transparent so the custom background shows through
-- CSS variables drive bubble colors, text color, opacity, and brightness so style changes apply live
+- CSS variables drive bubble colors, text color, accessibility sizing, opacity, and brightness so style changes apply live
 - The content script listens for storage changes so switching backgrounds in the popup updates the page live
 
 ## Contributing

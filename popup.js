@@ -1,10 +1,68 @@
 const STYLE_SETTINGS_KEY = "chatfaces_ui_settings";
 const DEFAULT_STYLE_SETTINGS = {
+  accessibilityPreset: "default",
   userBubbleColor: "#227864",
   assistantBubbleColor: "#1e1e32",
   textColor: "#e8e8ee",
   surfaceOpacity: 55,
   backgroundBrightness: 100,
+  messageTextSize: 18,
+  uiTextScale: 100,
+};
+
+const ACCESSIBILITY_PRESET_LABELS = {
+  default: "Balanced",
+  largeType: "Large Type",
+  highContrast: "High Contrast",
+  warmContrast: "Warm Contrast",
+  paper: "Paper",
+  custom: "Custom",
+};
+
+const ACCESSIBILITY_PRESETS = {
+  default: { ...DEFAULT_STYLE_SETTINGS, accessibilityPreset: "default" },
+  largeType: {
+    ...DEFAULT_STYLE_SETTINGS,
+    accessibilityPreset: "largeType",
+    textColor: "#ffffff",
+    surfaceOpacity: 72,
+    backgroundBrightness: 85,
+    messageTextSize: 22,
+    uiTextScale: 120,
+  },
+  highContrast: {
+    ...DEFAULT_STYLE_SETTINGS,
+    accessibilityPreset: "highContrast",
+    userBubbleColor: "#005a4f",
+    assistantBubbleColor: "#0f172a",
+    textColor: "#ffffff",
+    surfaceOpacity: 88,
+    backgroundBrightness: 72,
+    messageTextSize: 20,
+    uiTextScale: 115,
+  },
+  warmContrast: {
+    ...DEFAULT_STYLE_SETTINGS,
+    accessibilityPreset: "warmContrast",
+    userBubbleColor: "#7a3e00",
+    assistantBubbleColor: "#23222a",
+    textColor: "#fff7eb",
+    surfaceOpacity: 84,
+    backgroundBrightness: 78,
+    messageTextSize: 20,
+    uiTextScale: 110,
+  },
+  paper: {
+    ...DEFAULT_STYLE_SETTINGS,
+    accessibilityPreset: "paper",
+    userBubbleColor: "#f8f6f1",
+    assistantBubbleColor: "#f8f6f1",
+    textColor: "#111111",
+    surfaceOpacity: 94,
+    backgroundBrightness: 112,
+    messageTextSize: 19,
+    uiTextScale: 105,
+  },
 };
 
 const cards = document.querySelectorAll(".card");
@@ -19,6 +77,14 @@ const applyStyleBtn = document.getElementById("apply-style-btn");
 const chatPreview = document.getElementById("chat-preview");
 const previewUserBubble = document.getElementById("preview-user-bubble");
 const previewAssistantBubble = document.getElementById("preview-assistant-bubble");
+const accessibilityPresetValue = document.getElementById(
+  "accessibility-preset-value"
+);
+const presetButtons = document.querySelectorAll(".preset-chip");
+const messageTextSizeInput = document.getElementById("message-text-size");
+const messageTextSizeValue = document.getElementById("message-text-size-value");
+const uiTextScaleInput = document.getElementById("ui-text-scale");
+const uiTextScaleValue = document.getElementById("ui-text-scale-value");
 const surfaceOpacityInput = document.getElementById("surface-opacity");
 const surfaceOpacityValue = document.getElementById("surface-opacity-value");
 const backgroundBrightnessInput = document.getElementById("background-brightness");
@@ -53,8 +119,15 @@ function normalizeHexColor(value, fallback) {
   return fallback;
 }
 
+function normalizeAccessibilityPreset(value) {
+  if (typeof value !== "string") return DEFAULT_STYLE_SETTINGS.accessibilityPreset;
+  if (Object.hasOwn(ACCESSIBILITY_PRESET_LABELS, value)) return value;
+  return DEFAULT_STYLE_SETTINGS.accessibilityPreset;
+}
+
 function normalizeStyleSettings(settings = {}) {
   return {
+    accessibilityPreset: normalizeAccessibilityPreset(settings.accessibilityPreset),
     userBubbleColor: normalizeHexColor(
       settings.userBubbleColor,
       DEFAULT_STYLE_SETTINGS.userBubbleColor
@@ -78,6 +151,20 @@ function normalizeStyleSettings(settings = {}) {
       40,
       140
     ),
+    messageTextSize: clamp(
+      Number.isFinite(Number(settings.messageTextSize))
+        ? Number(settings.messageTextSize)
+        : DEFAULT_STYLE_SETTINGS.messageTextSize,
+      14,
+      28
+    ),
+    uiTextScale: clamp(
+      Number.isFinite(Number(settings.uiTextScale))
+        ? Number(settings.uiTextScale)
+        : DEFAULT_STYLE_SETTINGS.uiTextScale,
+      90,
+      140
+    ),
   };
 }
 
@@ -98,11 +185,14 @@ function toRgba(hex, opacity) {
 
 function styleSettingsEqual(left, right) {
   return (
+    left.accessibilityPreset === right.accessibilityPreset &&
     left.userBubbleColor === right.userBubbleColor &&
     left.assistantBubbleColor === right.assistantBubbleColor &&
     left.textColor === right.textColor &&
     left.surfaceOpacity === right.surfaceOpacity &&
-    left.backgroundBrightness === right.backgroundBrightness
+    left.backgroundBrightness === right.backgroundBrightness &&
+    left.messageTextSize === right.messageTextSize &&
+    left.uiTextScale === right.uiTextScale
   );
 }
 
@@ -135,11 +225,26 @@ function updatePaletteState(settings) {
   });
 }
 
+function updatePresetState(settings) {
+  presetButtons.forEach((button) => {
+    button.classList.toggle(
+      "active",
+      settings.accessibilityPreset !== "custom" &&
+        button.dataset.preset === settings.accessibilityPreset
+    );
+  });
+
+  accessibilityPresetValue.textContent =
+    ACCESSIBILITY_PRESET_LABELS[settings.accessibilityPreset] || "Custom";
+}
+
 function updatePreview(settings) {
   const bubbleOpacity = settings.surfaceOpacity / 100;
   const brightnessOffset = (settings.backgroundBrightness - 100) / 100;
   const previewTopAlpha = clamp(0.16 - brightnessOffset * 0.08, 0.04, 0.24);
   const previewBottomAlpha = clamp(0.9 - brightnessOffset * 0.28, 0.32, 0.94);
+  const previewFontSize = clamp(Math.round(settings.messageTextSize * 0.78), 12, 18);
+  const previewScale = settings.uiTextScale / 100;
 
   previewUserBubble.style.backgroundColor = toRgba(
     settings.userBubbleColor,
@@ -151,6 +256,11 @@ function updatePreview(settings) {
   );
   previewUserBubble.style.color = settings.textColor;
   previewAssistantBubble.style.color = settings.textColor;
+  previewUserBubble.style.fontSize = `${previewFontSize}px`;
+  previewAssistantBubble.style.fontSize = `${previewFontSize}px`;
+  previewUserBubble.style.lineHeight = "1.55";
+  previewAssistantBubble.style.lineHeight = "1.55";
+  chatPreview.style.fontSize = `${previewScale}rem`;
   chatPreview.style.background = `
     radial-gradient(circle at top right, rgba(114, 230, 200, ${previewTopAlpha}), transparent 42%),
     linear-gradient(135deg, rgba(9, 18, 35, ${previewBottomAlpha}), rgba(34, 26, 57, ${previewBottomAlpha}))
@@ -161,9 +271,13 @@ function renderDraftStyleSettings(settings) {
   styleInputs.userBubbleColor.value = settings.userBubbleColor;
   styleInputs.assistantBubbleColor.value = settings.assistantBubbleColor;
   styleInputs.textColor.value = settings.textColor;
+  messageTextSizeInput.value = String(settings.messageTextSize);
+  uiTextScaleInput.value = String(settings.uiTextScale);
   surfaceOpacityInput.value = String(settings.surfaceOpacity);
   backgroundBrightnessInput.value = String(settings.backgroundBrightness);
 
+  messageTextSizeValue.textContent = `${settings.messageTextSize}px`;
+  uiTextScaleValue.textContent = `${settings.uiTextScale}%`;
   styleValueLabels.userBubbleColor.textContent = settings.userBubbleColor.toUpperCase();
   styleValueLabels.assistantBubbleColor.textContent =
     settings.assistantBubbleColor.toUpperCase();
@@ -171,6 +285,7 @@ function renderDraftStyleSettings(settings) {
   surfaceOpacityValue.textContent = `${settings.surfaceOpacity}%`;
   backgroundBrightnessValue.textContent = `${settings.backgroundBrightness}%`;
 
+  updatePresetState(settings);
   updatePaletteState(settings);
   updatePreview(settings);
 }
@@ -188,14 +303,30 @@ function setStoredStyleSettings(settings) {
   syncApplyButton();
 }
 
-function updateDraftStyleSettings(partialSettings) {
-  draftStyleSettings = normalizeStyleSettings({
+function updateDraftStyleSettings(partialSettings, options = {}) {
+  const nextSettings = normalizeStyleSettings({
     ...draftStyleSettings,
     ...partialSettings,
   });
 
+  if (
+    !options.preservePreset &&
+    Object.keys(partialSettings).some((key) => key !== "accessibilityPreset")
+  ) {
+    nextSettings.accessibilityPreset = "custom";
+  }
+
+  draftStyleSettings = nextSettings;
+
   renderDraftStyleSettings(draftStyleSettings);
   syncApplyButton();
+}
+
+function applyAccessibilityPreset(presetKey) {
+  const preset = ACCESSIBILITY_PRESETS[presetKey];
+  if (!preset) return;
+
+  updateDraftStyleSettings(preset, { preservePreset: true });
 }
 
 function sendStyleSettingsToActiveTab(settings) {
@@ -312,9 +443,27 @@ backgroundBrightnessInput.addEventListener("input", () => {
   });
 });
 
+messageTextSizeInput.addEventListener("input", () => {
+  updateDraftStyleSettings({
+    messageTextSize: Number(messageTextSizeInput.value),
+  });
+});
+
+uiTextScaleInput.addEventListener("input", () => {
+  updateDraftStyleSettings({
+    uiTextScale: Number(uiTextScaleInput.value),
+  });
+});
+
 Object.entries(styleInputs).forEach(([key, input]) => {
   input.addEventListener("input", () => {
     updateDraftStyleSettings({ [key]: input.value });
+  });
+});
+
+presetButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    applyAccessibilityPreset(button.dataset.preset);
   });
 });
 
@@ -327,7 +476,7 @@ swatches.forEach((swatch) => {
 });
 
 resetStyleBtn.addEventListener("click", () => {
-  updateDraftStyleSettings(DEFAULT_STYLE_SETTINGS);
+  updateDraftStyleSettings(DEFAULT_STYLE_SETTINGS, { preservePreset: true });
 });
 
 applyStyleBtn.addEventListener("click", () => {

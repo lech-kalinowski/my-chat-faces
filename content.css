@@ -11,6 +11,9 @@ html {
   --chatfaces-text-color: #e8e8ee;
   --chatfaces-sidebar-text-color: #e8e8f0;
   --chatfaces-hover-bg: rgba(255, 255, 255, 0.08);
+  --chatfaces-message-font-size: 18px;
+  --chatfaces-ui-text-scale: 1;
+  --chatfaces-message-line-height: 1.65;
 }
 
 /* ── Background via ::before pseudo-element for animation ── */
@@ -109,6 +112,8 @@ html.chatfaces-active [data-sidebar] {
   background-color: var(--chatfaces-sidebar-bg) !important;
   backdrop-filter: blur(4px) !important;
   -webkit-backdrop-filter: blur(4px) !important;
+  font-size: calc(1rem * var(--chatfaces-ui-text-scale)) !important;
+  line-height: 1.6 !important;
 }
 
 html.chatfaces-active nav > *,
@@ -242,6 +247,17 @@ html.chatfaces-active[data-chatfaces-site="gemini"] rich-textarea {
    ══════════════════════════════════════════════════ */
 
 /* Chat message text */
+html.chatfaces-active [data-chatfaces-bubble="true"],
+html.chatfaces-active [data-testid="user-message"],
+html.chatfaces-active [data-testid="assistant-message"],
+html.chatfaces-active .font-claude-message,
+html.chatfaces-active .font-user-message,
+html.chatfaces-active message-content,
+html.chatfaces-active .conversation-turn {
+  font-size: var(--chatfaces-message-font-size) !important;
+  line-height: var(--chatfaces-message-line-height) !important;
+}
+
 html.chatfaces-active article[data-testid^="conversation-turn"] *,
 html.chatfaces-active [data-chatfaces-bubble="true"] *,
 html.chatfaces-active [data-testid="user-message"] *,
@@ -279,6 +295,8 @@ html.chatfaces-active input,
 html.chatfaces-active [contenteditable="true"] {
   color: var(--chatfaces-text-color) !important;
   caret-color: var(--chatfaces-text-color) !important;
+  font-size: calc(1rem * var(--chatfaces-ui-text-scale)) !important;
+  line-height: var(--chatfaces-message-line-height) !important;
 }
 
 /* Sidebar hover */

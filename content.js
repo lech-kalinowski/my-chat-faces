@@ -1,11 +1,14 @@
 const ACTIVE_CLASS = "chatfaces-active";
 const STYLE_SETTINGS_KEY = "chatfaces_ui_settings";
 const DEFAULT_STYLE_SETTINGS = {
+  accessibilityPreset: "default",
   userBubbleColor: "#227864",
   assistantBubbleColor: "#1e1e32",
   textColor: "#e8e8ee",
   surfaceOpacity: 55,
   backgroundBrightness: 100,
+  messageTextSize: 18,
+  uiTextScale: 100,
 };
 
 const html = document.documentElement;
@@ -37,8 +40,23 @@ function normalizeHexColor(value, fallback) {
   return fallback;
 }
 
+function normalizeAccessibilityPreset(value) {
+  const validPresets = new Set([
+    "default",
+    "largeType",
+    "highContrast",
+    "warmContrast",
+    "paper",
+    "custom",
+  ]);
+
+  if (typeof value === "string" && validPresets.has(value)) return value;
+  return DEFAULT_STYLE_SETTINGS.accessibilityPreset;
+}
+
 function normalizeStyleSettings(settings = {}) {
   return {
+    accessibilityPreset: normalizeAccessibilityPreset(settings.accessibilityPreset),
     userBubbleColor: normalizeHexColor(
       settings.userBubbleColor,
       DEFAULT_STYLE_SETTINGS.userBubbleColor
@@ -60,6 +78,20 @@ function normalizeStyleSettings(settings = {}) {
         ? Number(settings.backgroundBrightness)
         : DEFAULT_STYLE_SETTINGS.backgroundBrightness,
       40,
+      140
+    ),
+    messageTextSize: clamp(
+      Number.isFinite(Number(settings.messageTextSize))
+        ? Number(settings.messageTextSize)
+        : DEFAULT_STYLE_SETTINGS.messageTextSize,
+      14,
+      28
+    ),
+    uiTextScale: clamp(
+      Number.isFinite(Number(settings.uiTextScale))
+        ? Number(settings.uiTextScale)
+        : DEFAULT_STYLE_SETTINGS.uiTextScale,
+      90,
       140
     ),
   };
@@ -84,6 +116,11 @@ function applyStyleSettings(settings) {
   const normalized = normalizeStyleSettings(settings);
   const surfaceOpacity = normalized.surfaceOpacity / 100;
   const elevatedSurfaceOpacity = Math.min(surfaceOpacity + 0.05, 0.95);
+  const messageLineHeight = clamp(
+    1.55 + (normalized.messageTextSize - DEFAULT_STYLE_SETTINGS.messageTextSize) * 0.03,
+    1.55,
+    1.9
+  );
 
   html.style.setProperty(
     "--chatfaces-user-bubble-bg",
@@ -107,6 +144,18 @@ function applyStyleSettings(settings) {
   );
   html.style.setProperty("--chatfaces-text-color", normalized.textColor);
   html.style.setProperty("--chatfaces-sidebar-text-color", normalized.textColor);
+  html.style.setProperty(
+    "--chatfaces-message-font-size",
+    `${normalized.messageTextSize}px`
+  );
+  html.style.setProperty(
+    "--chatfaces-ui-text-scale",
+    `${(normalized.uiTextScale / 100).toFixed(2)}`
+  );
+  html.style.setProperty(
+    "--chatfaces-message-line-height",
+    messageLineHeight.toFixed(2)
+  );
   html.style.setProperty(
     "--chatfaces-hover-bg",
     `rgba(255, 255, 255, ${clamp(surfaceOpacity * 0.18, 0.06, 0.18).toFixed(2)})`

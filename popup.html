@@ -51,14 +51,60 @@
       <div class="settings-header">
         <div>
           <h2 class="settings-title" id="appearance-title">Chat Appearance</h2>
-          <p class="settings-copy">Tune bubble colors, opacity, and background brightness for better contrast.</p>
+          <p class="settings-copy">Tune text size, contrast, bubble colors, opacity, and background brightness for better readability.</p>
         </div>
         <button type="button" id="reset-style-btn" class="ghost-btn">Reset</button>
       </div>
 
       <div class="chat-preview" id="chat-preview" aria-hidden="true">
-        <div class="preview-bubble preview-bubble-user" id="preview-user-bubble">You</div>
-        <div class="preview-bubble preview-bubble-assistant" id="preview-assistant-bubble">Assistant</div>
+        <div class="preview-bubble preview-bubble-user" id="preview-user-bubble">Can you make this easier to read?</div>
+        <div class="preview-bubble preview-bubble-assistant" id="preview-assistant-bubble">Yes. Larger text and higher contrast can help.</div>
+      </div>
+
+      <div class="control-block">
+        <div class="control-heading">
+          <span class="control-label">Accessibility presets</span>
+          <span class="control-value" id="accessibility-preset-value">Balanced</span>
+        </div>
+        <div class="preset-grid" aria-label="Accessibility presets">
+          <button type="button" class="preset-chip" data-preset="default">Balanced</button>
+          <button type="button" class="preset-chip" data-preset="largeType">Large Type</button>
+          <button type="button" class="preset-chip" data-preset="highContrast">High Contrast</button>
+          <button type="button" class="preset-chip" data-preset="warmContrast">Warm Contrast</button>
+          <button type="button" class="preset-chip" data-preset="paper">Paper</button>
+        </div>
+      </div>
+
+      <div class="control-block">
+        <div class="control-heading">
+          <label class="control-label" for="message-text-size">Message text size</label>
+          <output class="control-value" id="message-text-size-value" for="message-text-size">18px</output>
+        </div>
+        <input
+          id="message-text-size"
+          class="range-slider"
+          type="range"
+          min="14"
+          max="28"
+          step="1"
+          value="18"
+        >
+      </div>
+
+      <div class="control-block">
+        <div class="control-heading">
+          <label class="control-label" for="ui-text-scale">Interface text scale</label>
+          <output class="control-value" id="ui-text-scale-value" for="ui-text-scale">100%</output>
+        </div>
+        <input
+          id="ui-text-scale"
+          class="range-slider"
+          type="range"
+          min="90"
+          max="140"
+          step="5"
+          value="100"
+        >
       </div>
 
       <div class="control-block">
@@ -101,6 +147,7 @@
         <div class="color-row">
           <input id="user-bubble-color" class="color-input" type="color" value="#227864">
           <div class="palette" aria-label="User bubble palette">
+            <button type="button" class="swatch" data-target="userBubbleColor" data-color="#F8F6F1" style="--swatch-color: #F8F6F1;"></button>
             <button type="button" class="swatch" data-target="userBubbleColor" data-color="#227864" style="--swatch-color: #227864;"></button>
             <button type="button" class="swatch" data-target="userBubbleColor" data-color="#845EC2" style="--swatch-color: #845EC2;"></button>
             <button type="button" class="swatch" data-target="userBubbleColor" data-color="#C34A36" style="--swatch-color: #C34A36;"></button>
@@ -118,6 +165,7 @@
         <div class="color-row">
           <input id="assistant-bubble-color" class="color-input" type="color" value="#1E1E32">
           <div class="palette" aria-label="Assistant bubble palette">
+            <button type="button" class="swatch" data-target="assistantBubbleColor" data-color="#F8F6F1" style="--swatch-color: #F8F6F1;"></button>
             <button type="button" class="swatch" data-target="assistantBubbleColor" data-color="#1E1E32" style="--swatch-color: #1E1E32;"></button>
             <button type="button" class="swatch" data-target="assistantBubbleColor" data-color="#16324F" style="--swatch-color: #16324F;"></button>
             <button type="button" class="swatch" data-target="assistantBubbleColor" data-color="#3B1F2B" style="--swatch-color: #3B1F2B;"></button>
@@ -135,6 +183,7 @@
         <div class="color-row">
           <input id="text-color" class="color-input" type="color" value="#E8E8EE">
           <div class="palette" aria-label="Text color palette">
+            <button type="button" class="swatch" data-target="textColor" data-color="#111111" style="--swatch-color: #111111;"></button>
             <button type="button" class="swatch" data-target="textColor" data-color="#E8E8EE" style="--swatch-color: #E8E8EE;"></button>
             <button type="button" class="swatch" data-target="textColor" data-color="#FFFFFF" style="--swatch-color: #FFFFFF;"></button>
             <button type="button" class="swatch" data-target="textColor" data-color="#FFE9C7" style="--swatch-color: #FFE9C7;"></button>
@@ -145,7 +194,7 @@
       </div>
 
       <div class="settings-actions">
-        <p class="settings-hint">Preview chat colors here, then apply colors, opacity, and brightness to the page.</p>
+        <p class="settings-hint">Preview accessibility and color changes here, then apply them to the current chat.</p>
         <button type="button" id="apply-style-btn" class="apply-btn" disabled>Apply Style</button>
       </div>
     </section>
