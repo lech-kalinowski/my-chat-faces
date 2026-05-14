@@ -1,14 +1,15 @@
 # My Chat Faces
 
-A Chrome extension that lets you set custom background images on AI chat interfaces — **ChatGPT**, **Claude**, **Gemini**, and **Grok**.
+A Chrome extension that lets you set custom backgrounds on AI chat interfaces — **ChatGPT**, **Claude**, **Gemini**, and **Grok**.
 
-Pick from three built-in backgrounds (Cyber, Fantasy, Unicorns) or upload your own image. Your choice persists across sessions, and backgrounds apply automatically every time you visit a supported site.
+Pick from three built-in backgrounds (Cyber, Fantasy, Unicorns), switch to a solid color, or upload your own image. Your choice persists across sessions, and backgrounds apply automatically every time you visit a supported site.
 
 <img width="1776" height="1188" alt="Screenshot 2026-02-06 at 17 06 52" src="https://github.com/user-attachments/assets/616d0762-8b60-43c8-a0ff-1afd8caa4a00" />
 
 ## Features
 
 - **3 built-in backgrounds** — Cyber, Fantasy, and Unicorns
+- **Solid color backgrounds** — switch to a clean flat color for focused reading
 - **Upload your own** — use any image from your computer
 - **Smooth fade-in animation** — backgrounds appear with a 2-second transition
 - **Per-message readability** — chat messages get a dark translucent panel so text stays readable
@@ -34,7 +35,7 @@ Pick from three built-in backgrounds (Cyber, Fantasy, Unicorns) or upload your o
 
 1. Visit ChatGPT, Claude, Gemini, or Grok
 2. Click the **My Chat Faces** icon in the Chrome toolbar
-3. Pick a background or click **+** to upload your own
+3. Pick a built-in background, choose a solid color, or click **+** to upload your own
 4. Tune accessibility presets, text size, chat bubble colors, opacity, and background brightness in the popup, then click **Apply Style**
 5. Click **Remove Background** to revert to the default look
 
@@ -61,8 +62,8 @@ To change a previously uploaded custom image, hover over the Custom card and cli
 
 ## How It Works
 
-- The popup saves your background choice to `chrome.storage.sync` (preset name) or `chrome.storage.local` (custom image data URL and chat style settings)
-- A content script runs on supported AI chat sites, reads the saved choice, and injects a fixed full-screen `div` behind the page content with the selected background image
+- The popup saves your background choice to `chrome.storage.sync` (preset name) and uses `chrome.storage.local` for custom image data, solid background color, and chat style settings
+- A content script runs on supported AI chat sites, reads the saved choice, and injects a fixed full-screen background layer behind the page content with the selected image or solid color
 - Site-specific CSS overrides make native page backgrounds transparent so the custom background shows through
 - CSS variables drive bubble colors, text color, accessibility sizing, opacity, and brightness so style changes apply live
 - The content script listens for storage changes so switching backgrounds in the popup updates the page live

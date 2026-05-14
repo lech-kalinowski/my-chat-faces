@@ -205,6 +205,10 @@ body {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
+.settings-panel-compact {
+  gap: 10px;
+}
+
 .settings-header {
   display: flex;
   align-items: flex-start;
@@ -224,7 +228,7 @@ body {
   font-size: 12px;
   color: var(--panel-muted);
   line-height: 1.4;
-  max-width: 230px;
+  max-width: none;
 }
 
 .ghost-btn {
@@ -244,6 +248,58 @@ body {
 .ghost-btn:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.18);
+}
+
+.disclosure-panel {
+  padding: 0;
+  overflow: hidden;
+}
+
+.disclosure-summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px;
+  cursor: pointer;
+}
+
+.disclosure-summary::-webkit-details-marker {
+  display: none;
+}
+
+.disclosure-summary:hover .disclosure-indicator {
+  border-color: rgba(114, 230, 200, 0.54);
+  background: rgba(114, 230, 200, 0.12);
+}
+
+.disclosure-indicator {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  font-size: 18px;
+  line-height: 1;
+  transition: transform 0.18s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.disclosure-panel[open] .disclosure-indicator {
+  transform: rotate(45deg);
+}
+
+.disclosure-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 0 14px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .chat-preview {
@@ -386,6 +442,11 @@ body {
   padding: 4px;
 }
 
+.color-input.active {
+  border-color: #ffffff;
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
 .color-input::-webkit-color-swatch-wrapper {
   padding: 0;
 }
@@ -421,19 +482,30 @@ body {
   box-shadow: 0 0 0 2px var(--accent-soft);
 }
 
+.section-hint {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--panel-muted);
+}
+
 .settings-actions {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
   gap: 12px;
-  padding-top: 2px;
 }
 
 .settings-hint {
   font-size: 11px;
   line-height: 1.4;
   color: var(--panel-muted);
-  max-width: 180px;
+}
+
+.settings-action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 .apply-btn {
@@ -486,7 +558,8 @@ body {
 }
 
 button:focus-visible,
-input:focus-visible {
+input:focus-visible,
+summary:focus-visible {
   outline: 2px solid rgba(114, 230, 200, 0.9);
   outline-offset: 2px;
 }

@@ -1,5 +1,9 @@
 const ACTIVE_CLASS = "chatfaces-active";
+const BACKGROUND_KEY = "chatfaces_bg";
+const CUSTOM_BACKGROUND_DATA_KEY = "chatfaces_custom_data";
+const SOLID_BACKGROUND_COLOR_KEY = "chatfaces_solid_color";
 const STYLE_SETTINGS_KEY = "chatfaces_ui_settings";
+const DEFAULT_SOLID_BACKGROUND_COLOR = "#f3efe4";
 const DEFAULT_STYLE_SETTINGS = {
   accessibilityPreset: "default",
   userBubbleColor: "#227864",
@@ -52,6 +56,19 @@ function normalizeAccessibilityPreset(value) {
 
   if (typeof value === "string" && validPresets.has(value)) return value;
   return DEFAULT_STYLE_SETTINGS.accessibilityPreset;
+}
+
+function normalizeBackgroundChoice(value) {
+  const validChoices = new Set([
+    "cyber",
+    "fantasy",
+    "unicorns",
+    "custom",
+    "solid",
+  ]);
+
+  if (typeof value === "string" && validChoices.has(value)) return value;
+  return null;
 }
 
 function normalizeStyleSettings(settings = {}) {
@@ -250,14 +267,41 @@ function startChatGptBubbleObserver() {
   });
 }
 
-function resolveImageUrl(bgName, callback) {
-  if (bgName === "custom") {
-    chrome.storage.local.get("chatfaces_custom_data", (data) => {
-      callback(data.chatfaces_custom_data || null);
-    });
-  } else {
-    callback(chrome.runtime.getURL(`backgrounds/${bgName}.png`));
+function resolveBackgroundSource(bgName, callback) {
+  const normalizedBackground = normalizeBackgroundChoice(bgName);
+
+  if (!normalizedBackground) {
+    callback(null);
+    return;
   }
+
+  if (normalizedBackground === "custom") {
+    chrome.storage.local.get(CUSTOM_BACKGROUND_DATA_KEY, (data) => {
+      callback({
+        type: "image",
+        value: data[CUSTOM_BACKGROUND_DATA_KEY] || null,
+      });
+    });
+    return;
+  }
+
+  if (normalizedBackground === "solid") {
+    chrome.storage.local.get(SOLID_BACKGROUND_COLOR_KEY, (data) => {
+      callback({
+        type: "solid",
+        value: normalizeHexColor(
+          data[SOLID_BACKGROUND_COLOR_KEY],
+          DEFAULT_SOLID_BACKGROUND_COLOR
+        ),
+      });
+    });
+    return;
+  }
+
+  callback({
+    type: "image",
+    value: chrome.runtime.getURL(`backgrounds/${normalizedBackground}.png`),
+  });
 }
 
 function fadeIn() {
@@ -279,9 +323,11 @@ function fadeOut() {
 }
 
 function setBgImage(url) {
-  html.style.setProperty("--chatfaces-bg", `url("${url}")`);
+  html.style.setProperty("--chatfaces-bg-color", "#0a0a14");
 
   if (url.startsWith("data:")) {
+    html.style.setProperty("--chatfaces-bg-image", "none");
+
     if (!customStyleEl) {
       customStyleEl = document.createElement("style");
       customStyleEl.id = "chatfaces-custom-style";
@@ -292,42 +338,69 @@ function setBgImage(url) {
       `html.chatfaces-active::before { background-image: url("${url}") !important; }`;
   } else if (customStyleEl) {
     customStyleEl.textContent = "";
+    html.style.setProperty("--chatfaces-bg-image", `url("${url}")`);
+  } else {
+    html.style.setProperty("--chatfaces-bg-image", `url("${url}")`);
+  }
+}
+
+function setBgSolid(color) {
+  html.style.setProperty("--chatfaces-bg-image", "none");
+  html.style.setProperty(
+    "--chatfaces-bg-color",
+    normalizeHexColor(color, DEFAULT_SOLID_BACKGROUND_COLOR)
+  );
+
+  if (customStyleEl) {
+    customStyleEl.textContent = "";
   }
 }
 
 function clearBgImage() {
-  html.style.removeProperty("--chatfaces-bg");
+  html.style.removeProperty("--chatfaces-bg-image");
+  html.style.removeProperty("--chatfaces-bg-color");
   if (customStyleEl) {
     customStyleEl.textContent = "";
   }
 }
 
 async function applyBackground(bgName) {
-  currentBackground = bgName || null;
+  currentBackground = normalizeBackgroundChoice(bgName);
 
-  if (!bgName) {
+  if (!currentBackground) {
     removeBackground();
     return;
   }
 
   const isAlreadyActive = html.classList.contains(ACTIVE_CLASS);
 
-  resolveImageUrl(bgName, async (url) => {
-    if (!url) return;
+  resolveBackgroundSource(currentBackground, async (source) => {
+    if (!source?.value) return;
 
     if (isAlreadyActive) {
       await fadeOut();
-      setBgImage(url);
-      const img = new Image();
-      img.onload = () => requestAnimationFrame(() => fadeIn());
-      img.src = url;
-    } else {
-      setBgImage(url);
-      html.classList.add(ACTIVE_CLASS);
-      const img = new Image();
-      img.onload = () => requestAnimationFrame(() => fadeIn());
-      img.src = url;
     }
+
+    if (source.type === "solid") {
+      setBgSolid(source.value);
+
+      if (!isAlreadyActive) {
+        html.classList.add(ACTIVE_CLASS);
+      }
+
+      requestAnimationFrame(() => fadeIn());
+      return;
+    }
+
+    setBgImage(source.value);
+
+    if (!isAlreadyActive) {
+      html.classList.add(ACTIVE_CLASS);
+    }
+
+    const img = new Image();
+    img.onload = () => requestAnimationFrame(() => fadeIn());
+    img.src = source.value;
   });
 }
 
@@ -351,13 +424,13 @@ function init() {
     startChatGptBubbleObserver();
   }
 
-  chrome.storage.sync.get("chatfaces_bg", (data) => {
-    applyBackground(data.chatfaces_bg || null);
+  chrome.storage.sync.get(BACKGROUND_KEY, (data) => {
+    applyBackground(data[BACKGROUND_KEY] || null);
   });
 
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === "sync" && changes.chatfaces_bg) {
-      applyBackground(changes.chatfaces_bg.newValue || null);
+    if (area === "sync" && changes[BACKGROUND_KEY]) {
+      applyBackground(changes[BACKGROUND_KEY].newValue || null);
     }
 
     if (area === "local" && changes[STYLE_SETTINGS_KEY]) {
@@ -366,10 +439,18 @@ function init() {
 
     if (
       area === "local" &&
-      changes.chatfaces_custom_data &&
+      changes[CUSTOM_BACKGROUND_DATA_KEY] &&
       currentBackground === "custom"
     ) {
       applyBackground("custom");
+    }
+
+    if (
+      area === "local" &&
+      changes[SOLID_BACKGROUND_COLOR_KEY] &&
+      currentBackground === "solid"
+    ) {
+      applyBackground("solid");
     }
   });
 

@@ -1,4 +1,8 @@
+const BACKGROUND_KEY = "chatfaces_bg";
+const CUSTOM_BACKGROUND_DATA_KEY = "chatfaces_custom_data";
+const SOLID_BACKGROUND_COLOR_KEY = "chatfaces_solid_color";
 const STYLE_SETTINGS_KEY = "chatfaces_ui_settings";
+const DEFAULT_SOLID_BACKGROUND_COLOR = "#f3efe4";
 const DEFAULT_STYLE_SETTINGS = {
   accessibilityPreset: "default",
   userBubbleColor: "#227864",
@@ -17,6 +21,10 @@ const ACCESSIBILITY_PRESET_LABELS = {
   warmContrast: "Warm Contrast",
   paper: "Paper",
   custom: "Custom",
+};
+
+const ACCESSIBILITY_PRESET_BACKGROUNDS = {
+  paper: DEFAULT_SOLID_BACKGROUND_COLOR,
 };
 
 const ACCESSIBILITY_PRESETS = {
@@ -85,11 +93,14 @@ const messageTextSizeInput = document.getElementById("message-text-size");
 const messageTextSizeValue = document.getElementById("message-text-size-value");
 const uiTextScaleInput = document.getElementById("ui-text-scale");
 const uiTextScaleValue = document.getElementById("ui-text-scale-value");
+const solidBackgroundInput = document.getElementById("solid-background-color");
+const solidBackgroundValue = document.getElementById("solid-background-color-value");
 const surfaceOpacityInput = document.getElementById("surface-opacity");
 const surfaceOpacityValue = document.getElementById("surface-opacity-value");
 const backgroundBrightnessInput = document.getElementById("background-brightness");
 const backgroundBrightnessValue = document.getElementById("background-brightness-value");
-const swatches = document.querySelectorAll(".swatch");
+const styleSwatches = document.querySelectorAll(".swatch[data-target]");
+const solidSwatches = document.querySelectorAll(".solid-swatch");
 
 const styleInputs = {
   userBubbleColor: document.getElementById("user-bubble-color"),
@@ -105,6 +116,8 @@ const styleValueLabels = {
 
 let currentStyleSettings = { ...DEFAULT_STYLE_SETTINGS };
 let draftStyleSettings = { ...DEFAULT_STYLE_SETTINGS };
+let currentBackgroundChoice = null;
+let currentSolidBackgroundColor = DEFAULT_SOLID_BACKGROUND_COLOR;
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -123,6 +136,19 @@ function normalizeAccessibilityPreset(value) {
   if (typeof value !== "string") return DEFAULT_STYLE_SETTINGS.accessibilityPreset;
   if (Object.hasOwn(ACCESSIBILITY_PRESET_LABELS, value)) return value;
   return DEFAULT_STYLE_SETTINGS.accessibilityPreset;
+}
+
+function normalizeBackgroundChoice(value) {
+  const validChoices = new Set([
+    "cyber",
+    "fantasy",
+    "unicorns",
+    "custom",
+    "solid",
+  ]);
+
+  if (typeof value === "string" && validChoices.has(value)) return value;
+  return null;
 }
 
 function normalizeStyleSettings(settings = {}) {
@@ -196,11 +222,30 @@ function styleSettingsEqual(left, right) {
   );
 }
 
-function setActive(bgName) {
+function setActive(bgName, solidColor = currentSolidBackgroundColor) {
+  currentBackgroundChoice = normalizeBackgroundChoice(bgName);
+  currentSolidBackgroundColor = normalizeHexColor(
+    solidColor,
+    DEFAULT_SOLID_BACKGROUND_COLOR
+  );
+
   cards.forEach((card) => {
-    card.classList.toggle("active", card.dataset.bg === bgName);
+    card.classList.toggle("active", card.dataset.bg === currentBackgroundChoice);
   });
-  removeBtn.disabled = !bgName;
+  removeBtn.disabled = !currentBackgroundChoice;
+
+  solidBackgroundInput.value = currentSolidBackgroundColor;
+  solidBackgroundValue.textContent = currentSolidBackgroundColor.toUpperCase();
+  solidBackgroundInput.classList.toggle("active", currentBackgroundChoice === "solid");
+
+  solidSwatches.forEach((swatch) => {
+    const swatchColor = normalizeHexColor(swatch.dataset.color, "");
+    swatch.classList.toggle(
+      "active",
+      currentBackgroundChoice === "solid" &&
+        currentSolidBackgroundColor === swatchColor
+    );
+  });
 }
 
 function showCustomPreview(dataUrl) {
@@ -218,7 +263,7 @@ function showCustomPreview(dataUrl) {
 }
 
 function updatePaletteState(settings) {
-  swatches.forEach((swatch) => {
+  styleSwatches.forEach((swatch) => {
     const key = swatch.dataset.target;
     const color = normalizeHexColor(swatch.dataset.color, "");
     swatch.classList.toggle("active", settings[key] === color);
@@ -327,6 +372,11 @@ function applyAccessibilityPreset(presetKey) {
   if (!preset) return;
 
   updateDraftStyleSettings(preset, { preservePreset: true });
+
+  const recommendedBackground = ACCESSIBILITY_PRESET_BACKGROUNDS[presetKey];
+  if (recommendedBackground) {
+    selectSolidBackground(recommendedBackground);
+  }
 }
 
 function sendStyleSettingsToActiveTab(settings) {
@@ -361,15 +411,38 @@ function persistDraftStyleSettings() {
   });
 }
 
+function selectBackground(bgName) {
+  chrome.storage.sync.set({ [BACKGROUND_KEY]: bgName }, () => {
+    setActive(bgName);
+  });
+}
+
+function selectSolidBackground(color) {
+  const normalizedColor = normalizeHexColor(color, DEFAULT_SOLID_BACKGROUND_COLOR);
+
+  chrome.storage.local.set({ [SOLID_BACKGROUND_COLOR_KEY]: normalizedColor }, () => {
+    chrome.storage.sync.set({ [BACKGROUND_KEY]: "solid" }, () => {
+      setActive("solid", normalizedColor);
+    });
+  });
+}
+
 function loadBackgroundChoice() {
-  chrome.storage.sync.get("chatfaces_bg", (data) => {
-    setActive(data.chatfaces_bg || null);
+  chrome.storage.local.get(SOLID_BACKGROUND_COLOR_KEY, (localData) => {
+    const solidColor = normalizeHexColor(
+      localData[SOLID_BACKGROUND_COLOR_KEY],
+      DEFAULT_SOLID_BACKGROUND_COLOR
+    );
+
+    chrome.storage.sync.get(BACKGROUND_KEY, (syncData) => {
+      setActive(syncData[BACKGROUND_KEY] || null, solidColor);
+    });
   });
 }
 
 function loadCustomPreview() {
-  chrome.storage.local.get("chatfaces_custom_data", (data) => {
-    showCustomPreview(data.chatfaces_custom_data || null);
+  chrome.storage.local.get(CUSTOM_BACKGROUND_DATA_KEY, (data) => {
+    showCustomPreview(data[CUSTOM_BACKGROUND_DATA_KEY] || null);
   });
 }
 
@@ -384,9 +457,7 @@ cards.forEach((card) => {
 
   card.addEventListener("click", () => {
     const bg = card.dataset.bg;
-    chrome.storage.sync.set({ chatfaces_bg: bg }, () => {
-      setActive(bg);
-    });
+    selectBackground(bg);
   });
 });
 
@@ -396,11 +467,9 @@ customCard.addEventListener("click", (event) => {
     return;
   }
 
-  chrome.storage.local.get("chatfaces_custom_data", (data) => {
-    if (data.chatfaces_custom_data) {
-      chrome.storage.sync.set({ chatfaces_bg: "custom" }, () => {
-        setActive("custom");
-      });
+  chrome.storage.local.get(CUSTOM_BACKGROUND_DATA_KEY, (data) => {
+    if (data[CUSTOM_BACKGROUND_DATA_KEY]) {
+      selectBackground("custom");
     } else {
       fileInput.click();
     }
@@ -415,11 +484,9 @@ fileInput.addEventListener("change", (event) => {
   reader.onload = (loadEvent) => {
     const dataUrl = loadEvent.target.result;
 
-    chrome.storage.local.set({ chatfaces_custom_data: dataUrl }, () => {
+    chrome.storage.local.set({ [CUSTOM_BACKGROUND_DATA_KEY]: dataUrl }, () => {
       showCustomPreview(dataUrl);
-      chrome.storage.sync.set({ chatfaces_bg: "custom" }, () => {
-        setActive("custom");
-      });
+      selectBackground("custom");
     });
   };
 
@@ -428,9 +495,13 @@ fileInput.addEventListener("change", (event) => {
 });
 
 removeBtn.addEventListener("click", () => {
-  chrome.storage.sync.remove("chatfaces_bg", () => {
-    setActive(null);
+  chrome.storage.sync.remove(BACKGROUND_KEY, () => {
+    setActive(null, currentSolidBackgroundColor);
   });
+});
+
+solidBackgroundInput.addEventListener("input", () => {
+  selectSolidBackground(solidBackgroundInput.value);
 });
 
 surfaceOpacityInput.addEventListener("input", () => {
@@ -467,11 +538,17 @@ presetButtons.forEach((button) => {
   });
 });
 
-swatches.forEach((swatch) => {
+styleSwatches.forEach((swatch) => {
   swatch.addEventListener("click", () => {
     updateDraftStyleSettings({
       [swatch.dataset.target]: swatch.dataset.color,
     });
+  });
+});
+
+solidSwatches.forEach((swatch) => {
+  swatch.addEventListener("click", () => {
+    selectSolidBackground(swatch.dataset.color);
   });
 });
 
@@ -484,12 +561,19 @@ applyStyleBtn.addEventListener("click", () => {
 });
 
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === "sync" && changes.chatfaces_bg) {
-    setActive(changes.chatfaces_bg.newValue || null);
+  if (area === "sync" && changes[BACKGROUND_KEY]) {
+    setActive(changes[BACKGROUND_KEY].newValue || null);
   }
 
-  if (area === "local" && changes.chatfaces_custom_data) {
-    showCustomPreview(changes.chatfaces_custom_data.newValue || null);
+  if (area === "local" && changes[CUSTOM_BACKGROUND_DATA_KEY]) {
+    showCustomPreview(changes[CUSTOM_BACKGROUND_DATA_KEY].newValue || null);
+  }
+
+  if (area === "local" && changes[SOLID_BACKGROUND_COLOR_KEY]) {
+    setActive(
+      currentBackgroundChoice,
+      changes[SOLID_BACKGROUND_COLOR_KEY].newValue || DEFAULT_SOLID_BACKGROUND_COLOR
+    );
   }
 
   if (area === "local" && changes[STYLE_SETTINGS_KEY]) {

@@ -3,6 +3,8 @@
    ══════════════════════════════════════════════════ */
 
 html {
+  --chatfaces-bg-image: none;
+  --chatfaces-bg-color: #0a0a14;
   --chatfaces-user-bubble-bg: rgba(34, 120, 100, 0.55);
   --chatfaces-assistant-bubble-bg: rgba(30, 30, 50, 0.6);
   --chatfaces-input-bg: rgba(15, 15, 30, 0.55);
@@ -26,8 +28,12 @@ html.chatfaces-active::before {
   position: fixed;
   inset: 0;
   z-index: 0;
-  background: var(--chatfaces-bg) center center / cover no-repeat fixed;
-  background-color: #0a0a14;
+  background-image: var(--chatfaces-bg-image);
+  background-position: center center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-color: var(--chatfaces-bg-color);
   opacity: var(--chatfaces-opacity, 0);
   filter: brightness(var(--chatfaces-bg-brightness));
   transition: opacity 2s cubic-bezier(0.25, 0, 0.15, 1);
