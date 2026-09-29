@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>My Chat Faces visibility tests</title>
+<style>
+body { margin: 28px; font: 16px/1.5 Georgia, serif; background: #f3efe4; color: #18212b; }
+h1 { margin-bottom: 8px; } button,select { padding: 10px; font: inherit; }
+#summary { font-weight: bold; } #results { max-height: 200px; overflow: auto; white-space: pre-wrap; }
+iframe { display: block; height: 850px; border: 1px solid #aaa; margin-top: 20px; background: white; }
+</style>
+<h1>My Chat Faces: visibility regression suite</h1>
+<p>Sanitized fixtures based on live DOM inspection, September 29, 2026. Runs the actual extension CSS and scripts with simulated Chrome storage.</p>
+<button id="run">Run all tests</button>
+<select id="site" aria-label="Fixture"></select>
+<select id="preset" aria-label="Preset"></select>
+<button id="preview">Preview fixture</button>
+<p id="summary">Ready</p>
+<pre id="results"></pre>
+<div id="frames"></div>
+<script type="module" src="/tests/browser.js"></script>
+</html>

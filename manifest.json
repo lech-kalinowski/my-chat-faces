@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
   "name": "My Chat Faces",
-  "version": "1.3.2",
-  "description": "Choose image or solid backgrounds, accessible text sizes, chat colors, opacity, and brightness for ChatGPT, Claude, Gemini, and Grok.",
+  "version": "1.3.9",
+  "minimum_chrome_version": "111",
+  "description": "Readable AI chats with guarded contrast, accessible text sizing, backgrounds, colors, opacity, and brightness controls.",
   "permissions": ["storage"],
   "action": {
     "default_popup": "popup.html",
@@ -25,16 +26,16 @@
         "https://claude.ai/*",
         "https://gemini.google.com/*",
         "https://grok.com/*",
-        "https://x.com/*"
+        "https://x.com/i/grok*"
       ],
-      "js": ["content.js"],
+      "js": ["readability.js", "content.js"],
       "css": ["content.css"],
       "run_at": "document_idle"
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["backgrounds/*.png"],
+      "resources": ["backgrounds/*.jpg"],
       "matches": [
         "https://chatgpt.com/*",
         "https://chat.openai.com/*",

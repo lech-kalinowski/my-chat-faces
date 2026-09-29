@@ -1,25 +1,138 @@
 const ACTIVE_CLASS = "chatfaces-active";
+const STYLE_ACTIVE_CLASS = "chatfaces-style-active";
 const BACKGROUND_KEY = "chatfaces_bg";
 const CUSTOM_BACKGROUND_DATA_KEY = "chatfaces_custom_data";
 const SOLID_BACKGROUND_COLOR_KEY = "chatfaces_solid_color";
 const STYLE_SETTINGS_KEY = "chatfaces_ui_settings";
 const DEFAULT_SOLID_BACKGROUND_COLOR = "#f3efe4";
+const SITE_MESSAGE_SELECTORS = {
+  chatgpt: {
+    user: '[data-user-message-bubble], [data-message-author-role="user"], [data-turn="user"]',
+    assistant: '[data-markdown-text-style="assistant-message"], [data-message-author-role="assistant"], [data-turn="assistant"]',
+  },
+  claude: {
+    user: '[data-testid="user-message"], .font-user-message',
+    assistant: '[data-testid="assistant-message"], .font-claude-message',
+  },
+  gemini: {
+    user: 'user-query, .user-query, .query-content',
+    assistant: 'model-response, message-content, .response-container-content',
+  },
+  grok: {
+    user: '[data-testid="user-message"], [data-message-author-role="user"]',
+    assistant: '[data-testid="assistant-message"], [data-message-author-role="assistant"]',
+  },
+};
+// X's React Native Web view has no message-role attributes (verified Sep 2026).
+// Keep its observed text-root signatures isolated from grok.com and other sites.
+const X_MESSAGE_SELECTORS = {
+  user: '[data-testid="user-message"], [data-message-author-role="user"], div.r-37j5jr.r-imh66m.r-1kt6imw',
+  assistant: '[data-testid="assistant-message"], [data-message-author-role="assistant"], div[dir].r-37j5jr.r-imh66m:not(.r-1kt6imw)',
+};
+const SHARED_SECONDARY_SURFACE_SELECTORS = [
+  "dialog",
+  '[role="dialog"]',
+  '[aria-modal="true"]',
+  "mat-dialog-container",
+  ".mat-mdc-dialog-surface",
+  '[role="menu"]',
+  '[role="listbox"]',
+  '[role="tooltip"]',
+  '[data-testid*="document-panel" i]',
+  '[data-testid*="document-viewer" i]',
+  '[data-testid*="file-preview-panel" i]',
+  '[data-testid*="file-viewer" i]',
+  '[data-testid*="preview-panel" i]',
+  '[data-test-id*="document-panel" i]',
+  '[data-test-id*="file-preview-panel" i]',
+  '[data-test-id*="preview-panel" i]',
+  'section[aria-label*="document preview" i]',
+  'aside[aria-label*="document preview" i]',
+  '[role="region"][aria-label*="document preview" i]',
+  'section[aria-label*="file preview" i]',
+  'aside[aria-label*="file preview" i]',
+  '[role="region"][aria-label*="file preview" i]',
+  '[class*="document-panel" i]',
+  '[class*="documentPanel" i]',
+  '[class*="file-preview" i]',
+  '[class*="filePreview" i]',
+  '[class*="preview-panel" i]',
+  '[class*="previewPanel" i]',
+];
+const SITE_SECONDARY_SURFACE_SELECTORS = {
+  chatgpt: [
+    '[data-testid*="canvas-panel" i]',
+    '[data-testid*="canvas-viewer" i]',
+    '[data-testid*="canvas-container" i]',
+    '[id*="canvas-panel" i]',
+    '[id*="canvas-viewer" i]',
+    '[id*="canvas-container" i]',
+    'section[aria-label*="canvas" i]',
+    'aside[aria-label*="canvas" i]',
+    '[role="region"][aria-label*="canvas" i]',
+    '[class*="canvas-panel" i]',
+    '[class*="canvasPanel" i]',
+  ],
+  claude: [
+    '[data-testid*="artifact-panel" i]',
+    '[data-testid*="artifact-viewer" i]',
+    '[data-testid*="artifact-preview" i]',
+    '[id*="artifact-panel" i]',
+    '[id*="artifact-viewer" i]',
+    '[id*="artifact-container" i]',
+    'section[aria-label*="artifact" i]',
+    'aside[aria-label*="artifact" i]',
+    '[role="region"][aria-label*="artifact" i]',
+    '[class*="artifact-panel" i]',
+    '[class*="artifactPanel" i]',
+  ],
+  gemini: [
+    "immersive-panel",
+    "canvas-panel",
+    '[data-testid*="immersive-panel" i]',
+    '[data-testid*="canvas-panel" i]',
+    '[data-test-id*="immersive-panel" i]',
+    '[data-test-id*="canvas-panel" i]',
+    '[id*="immersive-panel" i]',
+    '[id*="canvas-panel" i]',
+    '[id*="canvas-container" i]',
+    '[class*="immersive-panel" i]',
+    '[class*="immersivePanel" i]',
+    '[class*="canvas-panel" i]',
+    '[class*="canvasPanel" i]',
+  ],
+  grok: [
+    '[data-testid*="artifact-panel" i]',
+    '[data-testid*="file-preview" i]',
+    '[data-testid*="document-panel" i]',
+    '[data-testid*="media-modal" i]',
+    '[id*="file-preview" i]',
+    '[id*="document-panel" i]',
+    '[class*="artifact-panel" i]',
+    '[class*="file-preview" i]',
+    '[class*="document-panel" i]',
+  ],
+};
 const DEFAULT_STYLE_SETTINGS = {
   accessibilityPreset: "default",
-  userBubbleColor: "#227864",
+  userBubbleColor: "#073b32",
   assistantBubbleColor: "#1e1e32",
-  textColor: "#e8e8ee",
-  surfaceOpacity: 55,
+  textColor: "#ffffff",
+  surfaceOpacity: 75,
   backgroundBrightness: 100,
   messageTextSize: 18,
   uiTextScale: 100,
 };
+const { resolveReadability } = globalThis.ChatFacesReadability;
 
 const html = document.documentElement;
 let currentBackground = null;
 let customStyleEl = null;
-let chatGptBubbleObserver = null;
-let chatGptBubbleSyncScheduled = false;
+let pageMarkerObserver = null;
+let pageMarkerSyncScheduled = false;
+let backgroundApplySequence = 0;
+let hasStoredStyle = false;
+let backgroundReady = false;
 
 function detectSite() {
   const host = location.hostname;
@@ -27,8 +140,25 @@ function detectSite() {
   if (host === "claude.ai") return "claude";
   if (host === "gemini.google.com") return "gemini";
   if (host === "grok.com") return "grok";
-  if (host === "x.com" && location.pathname.startsWith("/i/grok")) return "grok";
+  if (host === "x.com" && /^\/i\/grok(?:\/|$)/.test(location.pathname)) return "grok";
   return null;
+}
+
+function getSiteLabel(site) {
+  return {
+    chatgpt: "ChatGPT",
+    claude: "Claude",
+    gemini: "Gemini",
+    grok: "Grok",
+  }[site] || "the current chat";
+}
+
+function getSecondarySurfaceSelector() {
+  const site = detectSite();
+  return [
+    ...SHARED_SECONDARY_SURFACE_SELECTORS,
+    ...(SITE_SECONDARY_SURFACE_SELECTORS[site] || []),
+  ].join(", ");
 }
 
 function clamp(value, min, max) {
@@ -73,6 +203,7 @@ function normalizeBackgroundChoice(value) {
 }
 
 function normalizeStyleSettings(settings = {}) {
+  if (!settings || typeof settings !== "object") settings = {};
   return {
     accessibilityPreset: normalizeAccessibilityPreset(settings.accessibilityPreset),
     userBubbleColor: normalizeHexColor(
@@ -127,13 +258,14 @@ function hexToRgb(hex) {
 
 function toRgba(hex, opacity) {
   const { r, g, b } = hexToRgb(hex);
-  return `rgba(${r}, ${g}, ${b}, ${opacity.toFixed(2)})`;
+  return `rgba(${r}, ${g}, ${b}, ${opacity.toFixed(3)})`;
 }
 
 function applyStyleSettings(settings) {
   const normalized = normalizeStyleSettings(settings);
   const surfaceOpacity = normalized.surfaceOpacity / 100;
-  const elevatedSurfaceOpacity = Math.min(surfaceOpacity + 0.05, 0.95);
+  const readability = resolveReadability(normalized);
+  const { surfaces } = readability;
   const messageLineHeight = clamp(
     1.55 + (normalized.messageTextSize - DEFAULT_STYLE_SETTINGS.messageTextSize) * 0.03,
     1.55,
@@ -142,26 +274,57 @@ function applyStyleSettings(settings) {
 
   html.style.setProperty(
     "--chatfaces-user-bubble-bg",
-    toRgba(normalized.userBubbleColor, surfaceOpacity)
+    toRgba(normalized.userBubbleColor, surfaces.user.opacity)
   );
   html.style.setProperty(
     "--chatfaces-assistant-bubble-bg",
-    toRgba(normalized.assistantBubbleColor, elevatedSurfaceOpacity)
+    toRgba(normalized.assistantBubbleColor, surfaces.assistant.opacity)
   );
   html.style.setProperty(
     "--chatfaces-input-bg",
-    toRgba(normalized.assistantBubbleColor, Math.min(surfaceOpacity + 0.08, 0.95))
+    toRgba(normalized.assistantBubbleColor, surfaces.input.opacity)
   );
   html.style.setProperty(
     "--chatfaces-sidebar-bg",
-    toRgba(normalized.assistantBubbleColor, elevatedSurfaceOpacity)
+    toRgba(normalized.assistantBubbleColor, surfaces.sidebar.opacity)
+  );
+  html.style.setProperty(
+    "--chatfaces-secondary-surface-bg",
+    toRgba(normalized.assistantBubbleColor, surfaces.secondary.opacity)
+  );
+  html.style.setProperty(
+    "--chatfaces-secondary-toolbar-bg",
+    toRgba(normalized.assistantBubbleColor, surfaces.toolbar.opacity)
+  );
+  html.style.setProperty(
+    "--chatfaces-secondary-code-bg",
+    toRgba(normalized.assistantBubbleColor, surfaces.code.opacity)
   );
   html.style.setProperty(
     "--chatfaces-bg-brightness",
     `${(normalized.backgroundBrightness / 100).toFixed(2)}`
   );
-  html.style.setProperty("--chatfaces-text-color", normalized.textColor);
-  html.style.setProperty("--chatfaces-sidebar-text-color", normalized.textColor);
+  html.style.setProperty("--chatfaces-text-color", surfaces.assistant.textColor);
+  html.style.setProperty("--chatfaces-user-text-color", surfaces.user.textColor);
+  html.style.setProperty(
+    "--chatfaces-assistant-text-color",
+    surfaces.assistant.textColor
+  );
+  html.style.setProperty("--chatfaces-input-text-color", surfaces.input.textColor);
+  html.style.setProperty(
+    "--chatfaces-secondary-text-color",
+    surfaces.secondary.textColor
+  );
+  html.style.setProperty("--chatfaces-code-text-color", surfaces.code.textColor);
+  html.style.setProperty("--chatfaces-toolbar-text-color", surfaces.toolbar.textColor);
+  html.style.setProperty(
+    "--chatfaces-sidebar-text-color",
+    surfaces.sidebar.textColor
+  );
+  html.setAttribute(
+    "data-chatfaces-readability-guard",
+    readability.adjustedText || readability.protectedOpacity ? "adjusted" : "safe"
+  );
   html.style.setProperty(
     "--chatfaces-message-font-size",
     `${normalized.messageTextSize}px`
@@ -182,127 +345,183 @@ function applyStyleSettings(settings) {
 
 function loadStyleSettings() {
   chrome.storage.local.get(STYLE_SETTINGS_KEY, (data) => {
+    hasStoredStyle =
+      Object.prototype.hasOwnProperty.call(data, STYLE_SETTINGS_KEY) &&
+      data[STYLE_SETTINGS_KEY] != null;
+
     applyStyleSettings(data[STYLE_SETTINGS_KEY]);
+    syncActivation();
   });
 }
 
-function getChatGptTurnSelector() {
-  return [
-    'article[data-testid^="conversation-turn-"]',
-    'article[data-testid*="conversation-turn"]',
-    'div[data-testid^="conversation-turn-"]',
-    'div[data-testid*="conversation-turn"]',
-  ].join(", ");
+function syncActivation() {
+  const site = detectSite();
+  if (site) html.setAttribute("data-chatfaces-site", site);
+  else html.removeAttribute("data-chatfaces-site");
+  html.classList.toggle(STYLE_ACTIVE_CLASS, Boolean(site && hasStoredStyle));
+  html.classList.toggle(ACTIVE_CLASS, Boolean(site && backgroundReady));
 }
 
-function findChatGptBubbleTarget(roleNode) {
-  return roleNode.closest(getChatGptTurnSelector()) || roleNode;
+function setMarker(node, name, value) {
+  if (node.getAttribute(name) !== value) node.setAttribute(name, value);
 }
 
-function clearChatGptBubbleMarkers() {
-  document
-    .querySelectorAll('[data-chatfaces-bubble="true"]')
-    .forEach((node) => {
-      node.removeAttribute("data-chatfaces-bubble");
-      node.removeAttribute("data-chatfaces-role");
-    });
-}
-
-function syncChatGptBubbleMarkers() {
-  if (detectSite() !== "chatgpt") return;
-
-  clearChatGptBubbleMarkers();
-
-  const roleNodes = document.querySelectorAll(
-    '[data-message-author-role="assistant"], [data-message-author-role="user"]'
-  );
-  const taggedTargets = new Set();
-
-  roleNodes.forEach((roleNode) => {
-    const role = roleNode.getAttribute("data-message-author-role");
-    if (role !== "assistant" && role !== "user") return;
-
-    const target = findChatGptBubbleTarget(roleNode);
-    if (!target || taggedTargets.has(target)) return;
-
-    target.setAttribute("data-chatfaces-bubble", "true");
-    target.setAttribute("data-chatfaces-role", role);
-    taggedTargets.add(target);
+function markSecondarySurfaceNodes() {
+  const selector = getSecondarySurfaceSelector();
+  document.querySelectorAll(selector).forEach((candidate) => {
+    if (candidate.matches("a, button, img, input, svg, textarea")) return;
+    if (candidate.parentElement?.closest(selector)) return;
+    setMarker(candidate, "data-chatfaces-surface", "secondary");
   });
-
-  if (taggedTargets.size > 0) return;
-
-  document
-    .querySelectorAll(getChatGptTurnSelector())
-    .forEach((turn, index) => {
-      turn.setAttribute("data-chatfaces-bubble", "true");
-      turn.setAttribute(
-        "data-chatfaces-role",
-        index % 2 === 0 ? "assistant" : "user"
-      );
-    });
 }
 
-function scheduleChatGptBubbleSync() {
-  if (chatGptBubbleSyncScheduled) return;
+function markMessageRoleNodes() {
+  const selectors = location.hostname === "x.com"
+    ? X_MESSAGE_SELECTORS : SITE_MESSAGE_SELECTORS[detectSite()];
+  const selected = new Map();
+  if (selectors) {
+    for (const [role, selector] of Object.entries(selectors)) {
+      document.querySelectorAll(selector).forEach((node) => {
+        // Prefer one content surface; turns need not alternate or contain text only.
+        if (node.querySelector(selector)) return;
+        if (node.closest('[contenteditable="true"], [data-chatfaces-surface="secondary"]')) return;
+        const content = role === "assistant"
+          ? node.querySelector('[data-perf-reply-text], .standard-markdown, .markdown') || node
+          : node;
+        selected.set(content, role);
+      });
+    }
+  }
+  document.querySelectorAll("[data-chatfaces-bubble]").forEach((node) => {
+    if (selected.has(node)) return;
+    node.removeAttribute("data-chatfaces-bubble");
+    node.removeAttribute("data-chatfaces-role");
+    node.removeAttribute("data-chatfaces-marker-source");
+  });
+  selected.forEach((role, node) => {
+    setMarker(node, "data-chatfaces-bubble", "true");
+    setMarker(node, "data-chatfaces-role", role);
+  });
+}
 
-  chatGptBubbleSyncScheduled = true;
+function markInterfaceSurfaces() {
+  const groups = {
+    sidebar: 'nav[aria-label="Chat history"], [aria-label="Sidebar"], [aria-label="Side Navigation"], .sidebar-navigation, [data-testid="sidebar"], [data-sidebar="sidebar"], mat-sidenav, nav',
+    composer: '[data-composer-surface-variant], [data-tap-focuses-field]:has([data-testid="chat-input"]), form:has(textarea), form:has([contenteditable="true"]), fieldset:has([contenteditable="true"]), .input-area-container, rich-textarea, .query-bar',
+    toolbar: 'header, [data-testid="message-actions"], .action-buttons',
+  };
+  for (const [kind, selector] of Object.entries(groups)) {
+    document.querySelectorAll(selector).forEach((node) => {
+      if (node.closest('[data-chatfaces-bubble], [data-chatfaces-surface="secondary"]')) return;
+      if (node.parentElement?.closest(selector)) return;
+      setMarker(node, "data-chatfaces-surface", kind);
+    });
+  }
+  // Some composers (notably X) do not use a form. Stop at their own controls.
+  document.querySelectorAll('textarea, [contenteditable="true"][role="textbox"]').forEach((editor) => {
+    if (editor.closest('[data-chatfaces-surface], [data-chatfaces-bubble]')) return;
+    let surface = editor;
+    for (let parent = editor.parentElement, depth = 0;
+      parent && parent !== document.body && depth < 6;
+      parent = parent.parentElement, depth += 1) {
+      if (parent.querySelector('[data-chatfaces-bubble], [data-chatfaces-surface]')) break;
+      if (parent.querySelector('button')) { surface = parent; break; }
+    }
+    setMarker(surface, "data-chatfaces-surface", "composer");
+  });
+}
+
+function syncPageMarkers() {
+  syncActivation();
+  if (!detectSite()) return;
+  // Reconcile reused nodes when streaming or client-side navigation changes roles.
+  document.querySelectorAll("[data-chatfaces-surface]").forEach((node) => {
+    node.removeAttribute("data-chatfaces-surface");
+  });
+  markSecondarySurfaceNodes();
+  markMessageRoleNodes();
+  markInterfaceSurfaces();
+
+  const shells = new Set();
+  document.querySelectorAll("[data-chatfaces-bubble], [data-chatfaces-surface]").forEach((node) => {
+    for (let parent = node.parentElement; parent && parent !== html; parent = parent.parentElement) {
+      if (parent.matches("[data-chatfaces-bubble], [data-chatfaces-surface]")) break;
+      shells.add(parent);
+    }
+  });
+  document.querySelectorAll("[data-chatfaces-shell]").forEach((node) => {
+    if (!shells.has(node)) node.removeAttribute("data-chatfaces-shell");
+  });
+  shells.forEach((node) => setMarker(node, "data-chatfaces-shell", "true"));
+}
+
+function schedulePageMarkerSync() {
+  if (pageMarkerSyncScheduled) return;
+  pageMarkerSyncScheduled = true;
   requestAnimationFrame(() => {
-    chatGptBubbleSyncScheduled = false;
-    syncChatGptBubbleMarkers();
+    pageMarkerSyncScheduled = false;
+    syncPageMarkers();
   });
 }
 
-function startChatGptBubbleObserver() {
-  if (detectSite() !== "chatgpt" || chatGptBubbleObserver) return;
-
-  scheduleChatGptBubbleSync();
-
-  chatGptBubbleObserver = new MutationObserver(() => {
-    scheduleChatGptBubbleSync();
-  });
-
-  chatGptBubbleObserver.observe(document.body, {
+function startPageMarkerObserver() {
+  if (pageMarkerObserver) return;
+  syncPageMarkers();
+  pageMarkerObserver = new MutationObserver(schedulePageMarkerSync);
+  pageMarkerObserver.observe(document.body, {
+    attributes: true,
+    attributeFilter: ["data-message-author-role", "data-testid", "data-test-id", "data-turn", "data-user-message-bubble", "data-markdown-text-style", "data-perf-reply-text", "class", "dir", "role", "aria-label", "aria-modal", "open"],
     childList: true,
     subtree: true,
   });
+  window.addEventListener("popstate", schedulePageMarkerSync);
+  window.addEventListener("hashchange", schedulePageMarkerSync);
 }
 
-function resolveBackgroundSource(bgName, callback) {
+function validCustomImage(value) {
+  return typeof value === "string" && /^data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/=\s]+$/i.test(value);
+}
+
+function resolveBackgroundSource(bgName) {
   const normalizedBackground = normalizeBackgroundChoice(bgName);
 
   if (!normalizedBackground) {
-    callback(null);
-    return;
+    return Promise.resolve(null);
   }
 
   if (normalizedBackground === "custom") {
-    chrome.storage.local.get(CUSTOM_BACKGROUND_DATA_KEY, (data) => {
-      callback({
-        type: "image",
-        value: data[CUSTOM_BACKGROUND_DATA_KEY] || null,
+    return new Promise((resolve) => {
+      chrome.storage.local.get(CUSTOM_BACKGROUND_DATA_KEY, (data) => {
+        resolve({
+          type: "image",
+          value: validCustomImage(data[CUSTOM_BACKGROUND_DATA_KEY]) ? data[CUSTOM_BACKGROUND_DATA_KEY] : null,
+        });
       });
     });
-    return;
   }
 
   if (normalizedBackground === "solid") {
-    chrome.storage.local.get(SOLID_BACKGROUND_COLOR_KEY, (data) => {
-      callback({
-        type: "solid",
-        value: normalizeHexColor(
-          data[SOLID_BACKGROUND_COLOR_KEY],
-          DEFAULT_SOLID_BACKGROUND_COLOR
-        ),
+    return new Promise((resolve) => {
+      chrome.storage.local.get(SOLID_BACKGROUND_COLOR_KEY, (data) => {
+        resolve({
+          type: "solid",
+          value: normalizeHexColor(
+            data[SOLID_BACKGROUND_COLOR_KEY],
+            DEFAULT_SOLID_BACKGROUND_COLOR
+          ),
+        });
       });
     });
-    return;
   }
 
-  callback({
+  return Promise.resolve({
     type: "image",
-    value: chrome.runtime.getURL(`backgrounds/${normalizedBackground}.png`),
+    value: chrome.runtime.getURL(`backgrounds/${normalizedBackground}.jpg`),
   });
+}
+
+function prefersReducedMotion() {
+  return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 }
 
 function fadeIn() {
@@ -310,16 +529,34 @@ function fadeIn() {
 }
 
 function fadeOut() {
-  return new Promise((resolve) => {
-    html.style.setProperty("--chatfaces-opacity", "0");
+  html.style.setProperty("--chatfaces-opacity", "0");
+  if (prefersReducedMotion()) return Promise.resolve();
 
-    const onEnd = () => {
+  return new Promise((resolve) => {
+    let timeoutId;
+
+    const finish = () => {
       html.removeEventListener("transitionend", onEnd);
+      clearTimeout(timeoutId);
       resolve();
     };
 
+    const onEnd = (event) => {
+      if (event.target !== html || event.propertyName !== "opacity") return;
+      finish();
+    };
+
     html.addEventListener("transitionend", onEnd);
-    setTimeout(resolve, 2200);
+    timeoutId = setTimeout(finish, 2200);
+  });
+}
+
+function preloadImage(url) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve();
+    image.onerror = () => reject(new Error("Background image failed to load."));
+    image.src = url;
   });
 }
 
@@ -366,50 +603,69 @@ function clearBgImage() {
 }
 
 async function applyBackground(bgName) {
-  currentBackground = normalizeBackgroundChoice(bgName);
+  const requestId = ++backgroundApplySequence;
+  const nextBackground = normalizeBackgroundChoice(bgName);
+  currentBackground = nextBackground;
 
-  if (!currentBackground) {
-    removeBackground();
+  if (!nextBackground) {
+    await removeBackground(requestId);
+    return;
+  }
+
+  const source = await resolveBackgroundSource(nextBackground);
+  if (requestId !== backgroundApplySequence) return;
+  if (!source?.value) {
+    await removeBackground(requestId);
     return;
   }
 
   const isAlreadyActive = html.classList.contains(ACTIVE_CLASS);
+  if (isAlreadyActive) await fadeOut();
+  if (requestId !== backgroundApplySequence) return;
 
-  resolveBackgroundSource(currentBackground, async (source) => {
-    if (!source?.value) return;
+  if (source.type === "solid") {
+    setBgSolid(source.value);
+    backgroundReady = true;
+    syncActivation();
+    requestAnimationFrame(() => {
+      if (requestId === backgroundApplySequence) fadeIn();
+    });
+    return;
+  }
 
-    if (isAlreadyActive) {
-      await fadeOut();
+  try {
+    await preloadImage(source.value);
+  } catch {
+    if (requestId === backgroundApplySequence) {
+      await removeBackground(requestId);
     }
+    return;
+  }
+  if (requestId !== backgroundApplySequence) return;
 
-    if (source.type === "solid") {
-      setBgSolid(source.value);
-
-      if (!isAlreadyActive) {
-        html.classList.add(ACTIVE_CLASS);
-      }
-
-      requestAnimationFrame(() => fadeIn());
-      return;
-    }
-
-    setBgImage(source.value);
-
-    if (!isAlreadyActive) {
-      html.classList.add(ACTIVE_CLASS);
-    }
-
-    const img = new Image();
-    img.onload = () => requestAnimationFrame(() => fadeIn());
-    img.src = source.value;
+  setBgImage(source.value);
+  backgroundReady = true;
+  syncActivation();
+  requestAnimationFrame(() => {
+    if (requestId === backgroundApplySequence) fadeIn();
   });
 }
 
-async function removeBackground() {
-  if (!html.classList.contains(ACTIVE_CLASS)) return;
+async function removeBackground(requestId = ++backgroundApplySequence) {
+  if (requestId !== backgroundApplySequence) return;
+
+  if (!html.classList.contains(ACTIVE_CLASS)) {
+    backgroundReady = false;
+    clearBgImage();
+    html.style.removeProperty("--chatfaces-opacity");
+    return;
+  }
 
   await fadeOut();
-  html.classList.remove(ACTIVE_CLASS);
+  if (requestId !== backgroundApplySequence) return;
+
+  backgroundReady = false;
+  syncActivation();
   clearBgImage();
   html.style.removeProperty("--chatfaces-opacity");
 }
@@ -421,9 +677,7 @@ function init() {
   html.setAttribute("data-chatfaces-site", site);
   loadStyleSettings();
 
-  if (site === "chatgpt") {
-    startChatGptBubbleObserver();
-  }
+  startPageMarkerObserver();
 
   chrome.storage.sync.get(BACKGROUND_KEY, (data) => {
     applyBackground(data[BACKGROUND_KEY] || null);
@@ -435,7 +689,9 @@ function init() {
     }
 
     if (area === "local" && changes[STYLE_SETTINGS_KEY]) {
+      hasStoredStyle = changes[STYLE_SETTINGS_KEY].newValue != null;
       applyStyleSettings(changes[STYLE_SETTINGS_KEY].newValue);
+      syncActivation();
     }
 
     if (
@@ -457,9 +713,12 @@ function init() {
 
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message?.type !== "chatfaces:apply-style-settings") return;
+    if (!detectSite()) return;
 
+    hasStoredStyle = true;
     applyStyleSettings(message.settings);
-    sendResponse({ ok: true });
+    syncPageMarkers();
+    sendResponse({ ok: true, siteLabel: getSiteLabel(site) });
   });
 }
 

@@ -3,16 +3,26 @@ const CUSTOM_BACKGROUND_DATA_KEY = "chatfaces_custom_data";
 const SOLID_BACKGROUND_COLOR_KEY = "chatfaces_solid_color";
 const STYLE_SETTINGS_KEY = "chatfaces_ui_settings";
 const DEFAULT_SOLID_BACKGROUND_COLOR = "#f3efe4";
+const MAX_CUSTOM_IMAGE_FILE_BYTES = 25 * 1024 * 1024;
+const MAX_CUSTOM_IMAGE_STORAGE_BYTES = 7 * 1024 * 1024;
+const MAX_CUSTOM_IMAGE_PIXELS = 80_000_000;
+const CUSTOM_IMAGE_VARIANTS = [
+  { maxDimension: 2560, quality: 0.86 },
+  { maxDimension: 2048, quality: 0.8 },
+  { maxDimension: 1600, quality: 0.74 },
+];
 const DEFAULT_STYLE_SETTINGS = {
   accessibilityPreset: "default",
-  userBubbleColor: "#227864",
+  userBubbleColor: "#073b32",
   assistantBubbleColor: "#1e1e32",
-  textColor: "#e8e8ee",
-  surfaceOpacity: 55,
+  textColor: "#ffffff",
+  surfaceOpacity: 75,
   backgroundBrightness: 100,
   messageTextSize: 18,
   uiTextScale: 100,
 };
+const { MIN_TEXT_CONTRAST, resolveReadability } =
+  globalThis.ChatFacesReadability;
 
 const ACCESSIBILITY_PRESET_LABELS = {
   default: "Balanced",
@@ -92,12 +102,19 @@ const customCard = document.getElementById("custom-card");
 const customPreview = document.getElementById("custom-preview");
 const uploadPlaceholder = document.getElementById("upload-placeholder");
 const changeBtn = document.getElementById("change-btn");
+const changeCustomBtn = document.getElementById("change-custom-btn");
 const fileInput = document.getElementById("file-input");
 const resetStyleBtn = document.getElementById("reset-style-btn");
 const applyStyleBtn = document.getElementById("apply-style-btn");
 const chatPreview = document.getElementById("chat-preview");
 const previewUserBubble = document.getElementById("preview-user-bubble");
 const previewAssistantBubble = document.getElementById("preview-assistant-bubble");
+const previewDocument = document.getElementById("preview-document");
+const previewDocumentBar = document.getElementById("preview-document-bar");
+const previewDocumentCode = document.getElementById("preview-document-code");
+const readabilityGuardStatus = document.getElementById(
+  "readability-guard-status"
+);
 const accessibilityPresetValue = document.getElementById(
   "accessibility-preset-value"
 );
@@ -114,6 +131,7 @@ const backgroundBrightnessInput = document.getElementById("background-brightness
 const backgroundBrightnessValue = document.getElementById("background-brightness-value");
 const styleSwatches = document.querySelectorAll(".swatch[data-target]");
 const solidSwatches = document.querySelectorAll(".solid-swatch");
+const actionStatus = document.getElementById("action-status");
 
 const styleInputs = {
   userBubbleColor: document.getElementById("user-bubble-color"),
@@ -133,9 +151,61 @@ let currentBackgroundChoice = null;
 let currentSolidBackgroundColor = DEFAULT_SOLID_BACKGROUND_COLOR;
 let pendingBackgroundChoice = null;
 let pendingSolidBackgroundColor = DEFAULT_SOLID_BACKGROUND_COLOR;
+let applyingDraftChanges = false;
+let hasStoredStyleSettings = false;
+let activeSiteLabel = null;
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
+}
+
+function setStatus(message, tone = "neutral") {
+  actionStatus.textContent = message;
+  actionStatus.dataset.tone = tone;
+}
+
+function getSupportedSiteLabel(url) {
+  if (typeof url !== "string") return null;
+
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname === "chatgpt.com" || parsed.hostname === "chat.openai.com") {
+      return "ChatGPT";
+    }
+    if (parsed.hostname === "claude.ai") return "Claude";
+    if (parsed.hostname === "gemini.google.com") return "Gemini";
+    if (parsed.hostname === "grok.com") return "Grok";
+    if (parsed.hostname === "x.com" && /^\/i\/grok(?:\/|$)/.test(parsed.pathname)) {
+      return "Grok";
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+function refreshActiveTabStatus() {
+  if (!chrome.tabs?.query) {
+    setStatus("Settings are saved for supported AI chats.", "neutral");
+    return;
+  }
+
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const error = chrome.runtime.lastError;
+    if (error) {
+      setStatus("Settings are saved for supported AI chats.", "neutral");
+      return;
+    }
+
+    activeSiteLabel = getSupportedSiteLabel(tabs?.[0]?.url);
+    if (activeSiteLabel) {
+      setStatus(`Ready for ${activeSiteLabel}.`, "success");
+      return;
+    }
+
+    setStatus("Open ChatGPT, Claude, Gemini, or Grok to see changes.", "warning");
+  });
 }
 
 function normalizeHexColor(value, fallback) {
@@ -167,6 +237,7 @@ function normalizeBackgroundChoice(value) {
 }
 
 function normalizeStyleSettings(settings = {}) {
+  if (!settings || typeof settings !== "object") settings = {};
   return {
     accessibilityPreset: normalizeAccessibilityPreset(settings.accessibilityPreset),
     userBubbleColor: normalizeHexColor(
@@ -224,6 +295,77 @@ function toRgba(hex, opacity) {
   return `rgba(${r}, ${g}, ${b}, ${opacity})`;
 }
 
+function dataUrlByteLength(dataUrl) {
+  const separatorIndex = dataUrl.indexOf(",");
+  if (separatorIndex < 0) return Number.POSITIVE_INFINITY;
+
+  const payload = dataUrl.slice(separatorIndex + 1);
+  return Math.ceil((payload.length * 3) / 4);
+}
+
+function loadImageFile(file) {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const image = new Image();
+
+    image.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(image);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("This image could not be opened."));
+    };
+    image.src = objectUrl;
+  });
+}
+
+function renderOptimizedImage(image, maxDimension, quality) {
+  const scale = Math.min(
+    1,
+    maxDimension / Math.max(image.naturalWidth, image.naturalHeight)
+  );
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+  canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+
+  const context = canvas.getContext("2d", { alpha: true });
+  if (!context) throw new Error("This browser could not prepare the image.");
+
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/webp", quality);
+}
+
+async function optimizeCustomImage(file) {
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Choose an image file.");
+  }
+  if (file.size > MAX_CUSTOM_IMAGE_FILE_BYTES) {
+    throw new Error("Choose an image smaller than 25 MB.");
+  }
+
+  const image = await loadImageFile(file);
+  if (!image.naturalWidth || !image.naturalHeight) {
+    throw new Error("This image has invalid dimensions.");
+  }
+  if (image.naturalWidth * image.naturalHeight > MAX_CUSTOM_IMAGE_PIXELS) {
+    throw new Error("Choose an image smaller than 80 megapixels.");
+  }
+
+  for (const variant of CUSTOM_IMAGE_VARIANTS) {
+    const dataUrl = renderOptimizedImage(
+      image,
+      variant.maxDimension,
+      variant.quality
+    );
+    if (dataUrlByteLength(dataUrl) <= MAX_CUSTOM_IMAGE_STORAGE_BYTES) {
+      return dataUrl;
+    }
+  }
+
+  throw new Error("This image is still too large after optimization.");
+}
+
 function styleSettingsEqual(left, right) {
   return (
     left.accessibilityPreset === right.accessibilityPreset &&
@@ -267,7 +409,9 @@ function renderBackgroundState(
   );
 
   cards.forEach((card) => {
-    card.classList.toggle("active", card.dataset.bg === normalizedBackground);
+    const isActive = card.dataset.bg === normalizedBackground;
+    card.classList.toggle("active", isActive);
+    card.setAttribute("aria-pressed", String(isActive));
   });
   removeBtn.disabled = !normalizedBackground;
 
@@ -277,10 +421,10 @@ function renderBackgroundState(
 
   solidSwatches.forEach((swatch) => {
     const swatchColor = normalizeHexColor(swatch.dataset.color, "");
-    swatch.classList.toggle(
-      "active",
-      normalizedBackground === "solid" && normalizedColor === swatchColor
-    );
+    const isActive =
+      normalizedBackground === "solid" && normalizedColor === swatchColor;
+    swatch.classList.toggle("active", isActive);
+    swatch.setAttribute("aria-pressed", String(isActive));
   });
 }
 
@@ -336,11 +480,21 @@ function showCustomPreview(dataUrl) {
     customPreview.style.display = "block";
     uploadPlaceholder.style.display = "none";
     changeBtn.style.display = "block";
+    changeCustomBtn.hidden = false;
+    customCard.setAttribute(
+      "aria-label",
+      "Use the saved custom background"
+    );
   } else {
     customPreview.src = "";
     customPreview.style.display = "none";
     uploadPlaceholder.style.display = "flex";
     changeBtn.style.display = "none";
+    changeCustomBtn.hidden = true;
+    customCard.setAttribute(
+      "aria-label",
+      "Upload a custom background image"
+    );
   }
 }
 
@@ -348,17 +502,19 @@ function updatePaletteState(settings) {
   styleSwatches.forEach((swatch) => {
     const key = swatch.dataset.target;
     const color = normalizeHexColor(swatch.dataset.color, "");
-    swatch.classList.toggle("active", settings[key] === color);
+    const isActive = settings[key] === color;
+    swatch.classList.toggle("active", isActive);
+    swatch.setAttribute("aria-pressed", String(isActive));
   });
 }
 
 function updatePresetState(settings) {
   presetButtons.forEach((button) => {
-    button.classList.toggle(
-      "active",
+    const isActive =
       settings.accessibilityPreset !== "custom" &&
-        button.dataset.preset === settings.accessibilityPreset
-    );
+      button.dataset.preset === settings.accessibilityPreset;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
   });
 
   accessibilityPresetValue.textContent =
@@ -366,7 +522,8 @@ function updatePresetState(settings) {
 }
 
 function updatePreview(settings) {
-  const bubbleOpacity = settings.surfaceOpacity / 100;
+  const readability = resolveReadability(settings);
+  const { surfaces } = readability;
   const brightnessOffset = (settings.backgroundBrightness - 100) / 100;
   const previewTopAlpha = clamp(0.16 - brightnessOffset * 0.08, 0.04, 0.24);
   const previewBottomAlpha = clamp(0.9 - brightnessOffset * 0.28, 0.32, 0.94);
@@ -375,16 +532,32 @@ function updatePreview(settings) {
 
   previewUserBubble.style.backgroundColor = toRgba(
     settings.userBubbleColor,
-    bubbleOpacity
+    surfaces.user.opacity
   );
   previewAssistantBubble.style.backgroundColor = toRgba(
     settings.assistantBubbleColor,
-    Math.min(bubbleOpacity + 0.05, 0.95)
+    surfaces.assistant.opacity
   );
-  previewUserBubble.style.color = settings.textColor;
-  previewAssistantBubble.style.color = settings.textColor;
+  previewDocument.style.backgroundColor = toRgba(
+    settings.assistantBubbleColor,
+    surfaces.secondary.opacity
+  );
+  previewDocumentBar.style.backgroundColor = toRgba(
+    settings.assistantBubbleColor,
+    surfaces.toolbar.opacity
+  );
+  previewDocumentCode.style.backgroundColor = toRgba(
+    settings.assistantBubbleColor,
+    surfaces.code.opacity
+  );
+  previewUserBubble.style.color = surfaces.user.textColor;
+  previewAssistantBubble.style.color = surfaces.assistant.textColor;
+  previewDocument.style.color = surfaces.secondary.textColor;
+  previewDocumentBar.style.color = surfaces.toolbar.textColor;
+  previewDocumentCode.style.color = surfaces.code.textColor;
   previewUserBubble.style.fontSize = `${previewFontSize}px`;
   previewAssistantBubble.style.fontSize = `${previewFontSize}px`;
+  previewDocument.style.fontSize = `${previewFontSize}px`;
   previewUserBubble.style.lineHeight = "1.55";
   previewAssistantBubble.style.lineHeight = "1.55";
   chatPreview.style.fontSize = `${previewScale}rem`;
@@ -392,6 +565,23 @@ function updatePreview(settings) {
     radial-gradient(circle at top right, rgba(114, 230, 200, ${previewTopAlpha}), transparent 42%),
     linear-gradient(135deg, rgba(9, 18, 35, ${previewBottomAlpha}), rgba(34, 26, 57, ${previewBottomAlpha}))
   `;
+
+  readabilityGuardStatus.dataset.adjusted = String(
+    readability.adjustedText || readability.protectedOpacity
+  );
+  if (readability.adjustedText && readability.protectedOpacity) {
+    readabilityGuardStatus.querySelector("span").textContent =
+      `Unsafe text and opacity were corrected to keep at least ${MIN_TEXT_CONTRAST}:1 contrast.`;
+  } else if (readability.adjustedText) {
+    readabilityGuardStatus.querySelector("span").textContent =
+      `Unsafe text was corrected only where needed to keep at least ${MIN_TEXT_CONTRAST}:1 contrast.`;
+  } else if (readability.protectedOpacity) {
+    readabilityGuardStatus.querySelector("span").textContent =
+      `Your text color is preserved; surface opacity is protected for at least ${MIN_TEXT_CONTRAST}:1 contrast.`;
+  } else {
+    readabilityGuardStatus.querySelector("span").textContent =
+      `Your selected colors already meet the ${MIN_TEXT_CONTRAST}:1 contrast target.`;
+  }
 }
 
 function renderDraftStyleSettings(settings) {
@@ -418,7 +608,14 @@ function renderDraftStyleSettings(settings) {
 }
 
 function syncApplyButton() {
+  if (applyingDraftChanges) {
+    applyStyleBtn.disabled = true;
+    applyStyleBtn.textContent = "Applying...";
+    return;
+  }
+
   const isDirty =
+    !hasStoredStyleSettings ||
     !styleSettingsEqual(draftStyleSettings, currentStyleSettings) ||
     backgroundSettingsDirty();
   applyStyleBtn.disabled = !isDirty;
@@ -433,6 +630,7 @@ function setStoredStyleSettings(settings) {
 }
 
 function updateDraftStyleSettings(partialSettings, options = {}) {
+  if (applyingDraftChanges) return;
   const nextSettings = normalizeStyleSettings({
     ...draftStyleSettings,
     ...partialSettings,
@@ -465,12 +663,53 @@ function applyAccessibilityPreset(presetKey) {
   }
 }
 
-function sendStyleSettingsToActiveTab(settings) {
-  if (!chrome.tabs?.query) return;
+function commitDraftChanges() {
+  if (applyingDraftChanges) return;
+
+  applyingDraftChanges = true;
+  applyStyleBtn.disabled = true;
+  applyStyleBtn.textContent = "Applying...";
+
+  persistPendingBackground((backgroundSaved) => {
+    if (!backgroundSaved) {
+      applyingDraftChanges = false;
+      syncApplyButton();
+      return;
+    }
+
+    if (!hasStoredStyleSettings || !styleSettingsEqual(draftStyleSettings, currentStyleSettings)) {
+      persistDraftStyleSettings(() => {
+        applyingDraftChanges = false;
+        syncApplyButton();
+      });
+      return;
+    }
+
+    applyingDraftChanges = false;
+    syncApplyButton();
+  });
+}
+
+function sendStyleSettingsToActiveTab(settings, callback) {
+  if (!chrome.tabs?.query) {
+    callback?.({ applied: false, reason: "unsupported" });
+    return;
+  }
 
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const queryError = chrome.runtime.lastError;
+    if (queryError) {
+      callback?.({ applied: false, reason: "unavailable" });
+      return;
+    }
+
     const activeTab = tabs && tabs[0];
-    if (!activeTab?.id) return;
+    if (!activeTab?.id) {
+      callback?.({ applied: false, reason: "unsupported" });
+      return;
+    }
+
+    const siteLabel = getSupportedSiteLabel(activeTab.url) || activeSiteLabel;
 
     chrome.tabs.sendMessage(
       activeTab.id,
@@ -478,8 +717,21 @@ function sendStyleSettingsToActiveTab(settings) {
         type: "chatfaces:apply-style-settings",
         settings,
       },
-      () => {
-        void chrome.runtime.lastError;
+      (response) => {
+        const messageError = chrome.runtime.lastError;
+        if (messageError || !response?.ok) {
+          callback?.({
+            applied: false,
+            reason: siteLabel ? "unavailable" : "unsupported",
+            siteLabel,
+          });
+          return;
+        }
+
+        callback?.({
+          applied: true,
+          siteLabel: response.siteLabel || siteLabel || "the current chat",
+        });
       }
     );
   });
@@ -489,18 +741,34 @@ function persistDraftStyleSettings(callback) {
   const nextSettings = normalizeStyleSettings(draftStyleSettings);
 
   chrome.storage.local.set({ [STYLE_SETTINGS_KEY]: nextSettings }, () => {
+    const error = chrome.runtime.lastError;
+    if (error) {
+      setStatus("Could not save the style. Try again.", "error");
+      callback?.(false);
+      return;
+    }
+
+    hasStoredStyleSettings = true;
     currentStyleSettings = nextSettings;
     draftStyleSettings = { ...nextSettings };
     renderDraftStyleSettings(draftStyleSettings);
     syncApplyButton();
-    sendStyleSettingsToActiveTab(nextSettings);
-    callback?.();
+    sendStyleSettingsToActiveTab(nextSettings, (result) => {
+      if (result.applied) {
+        setStatus(`Applied to ${result.siteLabel}.`, "success");
+      } else if (result.reason === "unavailable") {
+        setStatus("Style saved. Refresh the chat page once to apply it.", "warning");
+      } else {
+        setStatus("Style saved for your next supported chat.", "warning");
+      }
+    });
+    callback?.(true);
   });
 }
 
 function persistPendingBackground(callback) {
   if (!backgroundSettingsDirty()) {
-    callback?.();
+    callback?.(true);
     return;
   }
 
@@ -508,9 +776,24 @@ function persistPendingBackground(callback) {
   const nextSolidColor = pendingSolidBackgroundColor;
 
   chrome.storage.local.set({ [SOLID_BACKGROUND_COLOR_KEY]: nextSolidColor }, () => {
+    const localError = chrome.runtime.lastError;
+    if (localError) {
+      setStatus("Could not save the background color. Try again.", "error");
+      callback?.(false);
+      return;
+    }
+
     chrome.storage.sync.set({ [BACKGROUND_KEY]: nextBackgroundChoice }, () => {
+      const syncError = chrome.runtime.lastError;
+      if (syncError) {
+        setStatus("Could not save the background. Try again.", "error");
+        callback?.(false);
+        return;
+      }
+
       setCurrentBackground(nextBackgroundChoice, nextSolidColor);
-      callback?.();
+      setStatus("Background and preset applied.", "success");
+      callback?.(true);
     });
   });
 }
@@ -518,7 +801,14 @@ function persistPendingBackground(callback) {
 function selectBackground(bgName) {
   clearPendingBackground();
   chrome.storage.sync.set({ [BACKGROUND_KEY]: bgName }, () => {
+    const error = chrome.runtime.lastError;
+    if (error) {
+      setStatus("Could not save the background. Try again.", "error");
+      return;
+    }
+
     setCurrentBackground(bgName);
+    setStatus("Background updated.", "success");
   });
 }
 
@@ -527,8 +817,21 @@ function selectSolidBackground(color) {
   clearPendingBackground();
 
   chrome.storage.local.set({ [SOLID_BACKGROUND_COLOR_KEY]: normalizedColor }, () => {
+    const localError = chrome.runtime.lastError;
+    if (localError) {
+      setStatus("Could not save the background color. Try again.", "error");
+      return;
+    }
+
     chrome.storage.sync.set({ [BACKGROUND_KEY]: "solid" }, () => {
+      const syncError = chrome.runtime.lastError;
+      if (syncError) {
+        setStatus("Could not save the background. Try again.", "error");
+        return;
+      }
+
       setCurrentBackground("solid", normalizedColor);
+      setStatus("Solid background updated.", "success");
     });
   });
 }
@@ -554,6 +857,7 @@ function loadCustomPreview() {
 
 function loadStyleSettings() {
   chrome.storage.local.get(STYLE_SETTINGS_KEY, (data) => {
+    hasStoredStyleSettings = data[STYLE_SETTINGS_KEY] != null;
     setStoredStyleSettings(data[STYLE_SETTINGS_KEY]);
   });
 }
@@ -567,13 +871,14 @@ cards.forEach((card) => {
   });
 });
 
-customCard.addEventListener("click", (event) => {
-  if (event.target.id === "change-btn") {
-    fileInput.click();
-    return;
-  }
-
+customCard.addEventListener("click", () => {
   chrome.storage.local.get(CUSTOM_BACKGROUND_DATA_KEY, (data) => {
+    const error = chrome.runtime.lastError;
+    if (error) {
+      setStatus("Could not read the custom background.", "error");
+      return;
+    }
+
     if (data[CUSTOM_BACKGROUND_DATA_KEY]) {
       selectBackground("custom");
     } else {
@@ -582,32 +887,65 @@ customCard.addEventListener("click", (event) => {
   });
 });
 
-fileInput.addEventListener("change", (event) => {
+changeCustomBtn.addEventListener("click", () => {
+  fileInput.click();
+});
+
+fileInput.addEventListener("change", async (event) => {
   const file = event.target.files[0];
   if (!file) return;
 
-  const reader = new FileReader();
-  reader.onload = (loadEvent) => {
-    const dataUrl = loadEvent.target.result;
+  customCard.disabled = true;
+  changeCustomBtn.disabled = true;
+  setStatus("Optimizing your image for fast loading...", "neutral");
 
+  try {
+    const dataUrl = await optimizeCustomImage(file);
     chrome.storage.local.set({ [CUSTOM_BACKGROUND_DATA_KEY]: dataUrl }, () => {
+      const error = chrome.runtime.lastError;
+      customCard.disabled = false;
+      changeCustomBtn.disabled = false;
+      fileInput.value = "";
+
+      if (error) {
+        setStatus("The image could not be saved. Try a smaller file.", "error");
+        return;
+      }
+
       showCustomPreview(dataUrl);
       selectBackground("custom");
     });
-  };
-
-  reader.readAsDataURL(file);
-  fileInput.value = "";
+  } catch (error) {
+    customCard.disabled = false;
+    changeCustomBtn.disabled = false;
+    fileInput.value = "";
+    setStatus(error.message || "The image could not be prepared.", "error");
+  }
 });
 
 removeBtn.addEventListener("click", () => {
   clearPendingBackground();
   chrome.storage.sync.remove(BACKGROUND_KEY, () => {
+    const error = chrome.runtime.lastError;
+    if (error) {
+      setStatus("Could not remove the background. Try again.", "error");
+      return;
+    }
+
     setCurrentBackground(null, currentSolidBackgroundColor);
+    setStatus("Background removed. Your style settings are preserved.", "success");
   });
 });
 
 solidBackgroundInput.addEventListener("input", () => {
+  const color = normalizeHexColor(
+    solidBackgroundInput.value,
+    DEFAULT_SOLID_BACKGROUND_COLOR
+  );
+  solidBackgroundValue.textContent = color.toUpperCase();
+});
+
+solidBackgroundInput.addEventListener("change", () => {
   selectSolidBackground(solidBackgroundInput.value);
 });
 
@@ -641,7 +979,9 @@ Object.entries(styleInputs).forEach(([key, input]) => {
 
 presetButtons.forEach((button) => {
   button.addEventListener("click", () => {
+    if (applyingDraftChanges) return;
     applyAccessibilityPreset(button.dataset.preset);
+    commitDraftChanges();
   });
 });
 
@@ -662,17 +1002,11 @@ solidSwatches.forEach((swatch) => {
 resetStyleBtn.addEventListener("click", () => {
   clearPendingBackground();
   updateDraftStyleSettings(DEFAULT_STYLE_SETTINGS, { preservePreset: true });
+  setStatus("Default style is ready. Click Apply Style to confirm.", "neutral");
 });
 
 applyStyleBtn.addEventListener("click", () => {
-  persistPendingBackground(() => {
-    if (!styleSettingsEqual(draftStyleSettings, currentStyleSettings)) {
-      persistDraftStyleSettings();
-      return;
-    }
-
-    syncApplyButton();
-  });
+  commitDraftChanges();
 });
 
 chrome.storage.onChanged.addListener((changes, area) => {
@@ -692,6 +1026,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
   }
 
   if (area === "local" && changes[STYLE_SETTINGS_KEY]) {
+    hasStoredStyleSettings = changes[STYLE_SETTINGS_KEY].newValue != null;
     setStoredStyleSettings(changes[STYLE_SETTINGS_KEY].newValue);
   }
 });
@@ -699,3 +1034,4 @@ chrome.storage.onChanged.addListener((changes, area) => {
 loadBackgroundChoice();
 loadCustomPreview();
 loadStyleSettings();
+refreshActiveTabStatus();

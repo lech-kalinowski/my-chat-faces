@@ -1,26 +1,26 @@
-/* ══════════════════════════════════════════════════
-   ChatFaces – Background on <html> + Transparency
-   ══════════════════════════════════════════════════ */
-
+/* Only marked chat surfaces are recolored. Native layouts keep their sizing. */
 html {
   --chatfaces-bg-image: none;
   --chatfaces-bg-color: #0a0a14;
-  --chatfaces-user-bubble-bg: rgba(34, 120, 100, 0.55);
-  --chatfaces-assistant-bubble-bg: rgba(30, 30, 50, 0.6);
-  --chatfaces-input-bg: rgba(15, 15, 30, 0.55);
-  --chatfaces-sidebar-bg: rgba(30, 30, 50, 0.6);
   --chatfaces-bg-brightness: 1;
-  --chatfaces-text-color: #e8e8ee;
-  --chatfaces-sidebar-text-color: #e8e8f0;
-  --chatfaces-hover-bg: rgba(255, 255, 255, 0.08);
+  --chatfaces-user-bubble-bg: rgba(7, 59, 50, 0.9);
+  --chatfaces-assistant-bubble-bg: rgba(30, 30, 50, 0.9);
+  --chatfaces-input-bg: rgba(30, 30, 50, 0.95);
+  --chatfaces-sidebar-bg: rgba(30, 30, 50, 0.95);
+  --chatfaces-secondary-surface-bg: rgba(30, 30, 50, 0.98);
+  --chatfaces-secondary-toolbar-bg: rgba(30, 30, 50, 0.99);
+  --chatfaces-secondary-code-bg: rgba(30, 30, 50, 0.99);
+  --chatfaces-text-color: #ffffff;
+  --chatfaces-user-text-color: #ffffff;
+  --chatfaces-assistant-text-color: #ffffff;
+  --chatfaces-input-text-color: #ffffff;
+  --chatfaces-sidebar-text-color: #ffffff;
+  --chatfaces-secondary-text-color: #ffffff;
+  --chatfaces-toolbar-text-color: #ffffff;
+  --chatfaces-code-text-color: #ffffff;
   --chatfaces-message-font-size: 18px;
   --chatfaces-ui-text-scale: 1;
   --chatfaces-message-line-height: 1.65;
-}
-
-/* ── Background via ::before pseudo-element for animation ── */
-html.chatfaces-active {
-  position: relative !important;
 }
 
 html.chatfaces-active::before {
@@ -28,301 +28,200 @@ html.chatfaces-active::before {
   position: fixed;
   inset: 0;
   z-index: 0;
-  background-image: var(--chatfaces-bg-image);
-  background-position: center center;
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-  background-color: var(--chatfaces-bg-color);
+  background: var(--chatfaces-bg-color) var(--chatfaces-bg-image) center / cover no-repeat;
   opacity: var(--chatfaces-opacity, 0);
   filter: brightness(var(--chatfaces-bg-brightness));
   transition: opacity 2s cubic-bezier(0.25, 0, 0.15, 1);
   pointer-events: none;
 }
 
-/* ══════════════════════════════════════════════════
-   Make EVERYTHING on the page transparent so the
-   html background shows through everywhere.
-   ══════════════════════════════════════════════════ */
-
-/* Body — transparent and above the ::before pseudo */
 html.chatfaces-active body {
-  background: transparent !important;
   position: relative !important;
   z-index: 1 !important;
-}
-
-/* All nested containers — nuclear approach */
-html.chatfaces-active body > div,
-html.chatfaces-active body > div > div,
-html.chatfaces-active body > div > div > div,
-html.chatfaces-active body > div > div > div > div,
-html.chatfaces-active body > div > div > div > div > div,
-html.chatfaces-active main,
-html.chatfaces-active header,
-html.chatfaces-active nav,
-html.chatfaces-active aside,
-html.chatfaces-active [class*="bg-token"],
-html.chatfaces-active [class*="bg-white"],
-html.chatfaces-active [class*="bg-gray"],
-html.chatfaces-active [class*="bg-black"],
-html.chatfaces-active [class*="bg-bg"],
-html.chatfaces-active [class*="bg-stone"],
-html.chatfaces-active [class*="bg-cream"],
-html.chatfaces-active [class*="react-scroll-to-bottom"],
-html.chatfaces-active [class*="sidebar"],
-html.chatfaces-active [class*="min-h-screen"],
-html.chatfaces-active [class*="overflow-y-auto"],
-html.chatfaces-active [class*="overflow-hidden"],
-html.chatfaces-active .h-full.w-full,
-html.chatfaces-active .flex.h-full,
-html.chatfaces-active .flex-1,
-html.chatfaces-active .contents,
-html.chatfaces-active mat-sidenav-content,
-html.chatfaces-active .conversation-container,
-html.chatfaces-active [class*="chat-window"],
-html.chatfaces-active [class*="response-container"],
-html.chatfaces-active [class*="main-container"],
-html.chatfaces-active .gmat-body-medium {
-  background-color: transparent !important;
-  background-image: none !important;
-}
-
-/* Deep-nuke inside sidebar + main */
-html.chatfaces-active nav *,
-html.chatfaces-active aside *,
-html.chatfaces-active [class*="sidebar"] *,
-html.chatfaces-active main * {
-  background-color: transparent !important;
-  background-image: none !important;
   background: transparent !important;
 }
 
-/* Kill ALL pseudo-element backgrounds/gradients across the entire page */
-html.chatfaces-active body *::before,
-html.chatfaces-active body *::after {
-  background: transparent !important;
+/* Clear only ancestors of actual chat content, never all bg/overflow utilities. */
+html.chatfaces-active [data-chatfaces-shell="true"]:not([data-chatfaces-surface]):not([data-chatfaces-bubble]) {
   background-color: transparent !important;
   background-image: none !important;
 }
 
-/* ══════════════════════════════════════════════════
-   Sidebar — light frosted glass tint
-   ══════════════════════════════════════════════════ */
-html.chatfaces-active nav,
-html.chatfaces-active aside,
-html.chatfaces-active [class*="sidebar"],
-html.chatfaces-active [data-testid*="sidebar"],
-html.chatfaces-active [data-testid*="history"],
-html.chatfaces-active [data-sidebar] {
-  background-color: var(--chatfaces-sidebar-bg) !important;
-  backdrop-filter: blur(4px) !important;
-  -webkit-backdrop-filter: blur(4px) !important;
-  font-size: calc(1rem * var(--chatfaces-ui-text-scale)) !important;
-  line-height: 1.6 !important;
-}
-
-html.chatfaces-active nav > *,
-html.chatfaces-active aside > *,
-html.chatfaces-active [class*="sidebar"] > *,
-html.chatfaces-active [data-testid*="sidebar"] > *,
-html.chatfaces-active [data-testid*="history"] > *,
-html.chatfaces-active [data-sidebar] > * {
-  background-color: transparent !important;
-}
-
-/* ══════════════════════════════════════════════════
-   iMessage / WhatsApp style chat bubbles
-   ══════════════════════════════════════════════════ */
-
-/* ═══ ChatGPT ═══ */
-
-html.chatfaces-active[data-chatfaces-site="chatgpt"] [data-chatfaces-bubble="true"] {
+html:is(.chatfaces-active, .chatfaces-style-active) [data-chatfaces-bubble="true"] {
+  --chatfaces-current-bg: var(--chatfaces-assistant-bubble-bg);
+  --chatfaces-current-text-color: var(--chatfaces-assistant-text-color);
   display: block !important;
-  width: auto !important;
+  box-sizing: border-box !important;
   min-width: 0 !important;
-  max-width: min(85%, 920px) !important;
-  margin-bottom: 8px !important;
+  max-width: 100% !important;
   padding: 12px 16px !important;
-  backdrop-filter: blur(6px) !important;
-  -webkit-backdrop-filter: blur(6px) !important;
-  box-shadow: 0 10px 28px rgba(4, 8, 18, 0.18) !important;
-  white-space: normal !important;
+  border-radius: 18px 18px 18px 4px !important;
+  background: var(--chatfaces-current-bg) !important;
+  color: var(--chatfaces-current-text-color) !important;
+  font-size: var(--chatfaces-message-font-size) !important;
+  line-height: var(--chatfaces-message-line-height) !important;
+  overflow-wrap: anywhere;
   word-break: normal !important;
-  overflow-wrap: break-word !important;
   writing-mode: horizontal-tb !important;
-  text-orientation: mixed !important;
+  box-shadow: 0 4px 18px rgba(4, 8, 18, 0.12);
 }
 
-html.chatfaces-active[data-chatfaces-site="chatgpt"] [data-chatfaces-bubble="true"] * {
-  white-space: normal !important;
-  word-break: normal !important;
-  overflow-wrap: break-word !important;
-  writing-mode: horizontal-tb !important;
-  text-orientation: mixed !important;
-}
-
-/* User bubble — tinted green, right-aligned tail */
-html.chatfaces-active[data-chatfaces-site="chatgpt"] [data-chatfaces-bubble="true"][data-chatfaces-role="user"] {
-  background: var(--chatfaces-user-bubble-bg) !important;
+html:is(.chatfaces-active, .chatfaces-style-active) [data-chatfaces-role="user"] {
+  --chatfaces-current-bg: var(--chatfaces-user-bubble-bg);
+  --chatfaces-current-text-color: var(--chatfaces-user-text-color);
+  width: fit-content !important;
+  max-width: 100% !important;
+  min-width: min(8em, 100%) !important;
+  margin-inline-start: auto !important;
   border-radius: 18px 18px 4px 18px !important;
-  margin-left: auto !important;
-  margin-right: 16px !important;
-  min-width: min(180px, calc(100% - 32px)) !important;
+  white-space: pre-wrap;
 }
 
-/* Assistant bubble — dark, left-aligned tail */
-html.chatfaces-active[data-chatfaces-site="chatgpt"] [data-chatfaces-bubble="true"][data-chatfaces-role="assistant"] {
-  background: var(--chatfaces-assistant-bubble-bg) !important;
-  border-radius: 18px 18px 18px 4px !important;
-  margin-right: auto !important;
-  margin-left: 16px !important;
+html:is(.chatfaces-active, .chatfaces-style-active) [data-chatfaces-role="assistant"] {
+  width: auto !important;
+  align-self: stretch;
 }
 
-/* Input bar */
-html.chatfaces-active[data-chatfaces-site="chatgpt"] form {
-  background: var(--chatfaces-input-bg) !important;
-  border-radius: 16px !important;
-  backdrop-filter: blur(6px) !important;
-  -webkit-backdrop-filter: blur(6px) !important;
+html:is(.chatfaces-active, .chatfaces-style-active) [data-chatfaces-surface] {
+  --chatfaces-current-bg: var(--chatfaces-secondary-surface-bg);
+  --chatfaces-current-text-color: var(--chatfaces-secondary-text-color);
+  background: var(--chatfaces-current-bg) !important;
+  color: var(--chatfaces-current-text-color) !important;
+  border-color: color-mix(in srgb, var(--chatfaces-current-text-color) 20%, transparent) !important;
+  font-size: calc(1rem * var(--chatfaces-ui-text-scale)) !important;
+  line-height: 1.5 !important;
+  color-scheme: normal;
+  overflow-wrap: anywhere;
 }
 
-/* ═══ Claude ═══ */
-
-html.chatfaces-active[data-chatfaces-site="claude"] [data-testid="user-message"],
-html.chatfaces-active[data-chatfaces-site="claude"] .font-user-message {
-  background: var(--chatfaces-user-bubble-bg) !important;
-  border-radius: 18px 18px 4px 18px !important;
-  padding: 12px 16px !important;
-  margin-bottom: 8px !important;
-  backdrop-filter: blur(6px) !important;
-  -webkit-backdrop-filter: blur(6px) !important;
+html:is(.chatfaces-active, .chatfaces-style-active) [data-chatfaces-surface="sidebar"] {
+  --chatfaces-current-bg: var(--chatfaces-sidebar-bg);
+  --chatfaces-current-text-color: var(--chatfaces-sidebar-text-color);
 }
 
-html.chatfaces-active[data-chatfaces-site="claude"] [data-testid="assistant-message"],
-html.chatfaces-active[data-chatfaces-site="claude"] .font-claude-message {
-  background: var(--chatfaces-assistant-bubble-bg) !important;
-  border-radius: 18px 18px 18px 4px !important;
-  padding: 12px 16px !important;
-  margin-bottom: 8px !important;
-  backdrop-filter: blur(6px) !important;
-  -webkit-backdrop-filter: blur(6px) !important;
+html:is(.chatfaces-active, .chatfaces-style-active) [data-chatfaces-surface="composer"] {
+  --chatfaces-current-bg: var(--chatfaces-input-bg);
+  --chatfaces-current-text-color: var(--chatfaces-input-text-color);
+  border-radius: 16px;
 }
 
-html.chatfaces-active[data-chatfaces-site="claude"] [class*="ProseMirror"],
-html.chatfaces-active[data-chatfaces-site="claude"] fieldset {
-  background: var(--chatfaces-input-bg) !important;
-  border-radius: 16px !important;
-  backdrop-filter: blur(6px) !important;
-  -webkit-backdrop-filter: blur(6px) !important;
+html:is(.chatfaces-active, .chatfaces-style-active) [data-chatfaces-surface="toolbar"] {
+  --chatfaces-current-bg: var(--chatfaces-secondary-toolbar-bg);
+  --chatfaces-current-text-color: var(--chatfaces-toolbar-text-color);
 }
 
-/* ═══ Gemini ═══ */
-
-html.chatfaces-active[data-chatfaces-site="gemini"] .query-content,
-html.chatfaces-active[data-chatfaces-site="gemini"] .user-query {
-  background: var(--chatfaces-user-bubble-bg) !important;
-  border-radius: 18px 18px 4px 18px !important;
-  padding: 12px 16px !important;
-  margin-bottom: 8px !important;
-  backdrop-filter: blur(6px) !important;
-  -webkit-backdrop-filter: blur(6px) !important;
+html:is(.chatfaces-active, .chatfaces-style-active) [data-chatfaces-surface="secondary"] {
+  isolation: isolate;
+  box-shadow: 0 12px 40px rgba(3, 7, 18, 0.2);
 }
 
-html.chatfaces-active[data-chatfaces-site="gemini"] message-content,
-html.chatfaces-active[data-chatfaces-site="gemini"] .response-container-content,
-html.chatfaces-active[data-chatfaces-site="gemini"] .conversation-turn {
-  background: var(--chatfaces-assistant-bubble-bg) !important;
-  border-radius: 18px 18px 18px 4px !important;
-  padding: 12px 16px !important;
-  margin-bottom: 8px !important;
-  backdrop-filter: blur(6px) !important;
-  -webkit-backdrop-filter: blur(6px) !important;
+/* Pair inherited text with the selected surface instead of native dark/light fills. */
+html:is(.chatfaces-active, .chatfaces-style-active) :is([data-chatfaces-bubble], [data-chatfaces-surface]) :where(
+  div, section, article, main, header, nav, aside, p, span, ul, ol, li, blockquote,
+  h1, h2, h3, h4, h5, h6, table, thead, tbody, tr, th, td, strong, em, b, i,
+  label, a, code, button, [role="button"], [role="tab"], [role="menuitem"]
+):not(:where(svg *, .katex *, math *)) {
+  color: var(--chatfaces-current-text-color) !important;
+  text-shadow: none !important;
+  background-color: transparent !important;
+  background-image: none !important;
 }
 
-html.chatfaces-active[data-chatfaces-site="gemini"] .input-area-container,
-html.chatfaces-active[data-chatfaces-site="gemini"] rich-textarea {
-  background: var(--chatfaces-input-bg) !important;
-  border-radius: 16px !important;
-  backdrop-filter: blur(6px) !important;
-  -webkit-backdrop-filter: blur(6px) !important;
+html:is(.chatfaces-active, .chatfaces-style-active) :is([data-chatfaces-bubble], [data-chatfaces-surface]) :where(div, p, span, li, blockquote, th, td, strong, em, a, label, button):not(:where(.katex *, math *)) {
+  font-size: inherit !important;
+  line-height: inherit !important;
 }
 
-/* ══════════════════════════════════════════════════
-   Text readability
-   ══════════════════════════════════════════════════ */
-
-/* Chat message text */
-html.chatfaces-active [data-chatfaces-bubble="true"],
-html.chatfaces-active [data-testid="user-message"],
-html.chatfaces-active [data-testid="assistant-message"],
-html.chatfaces-active .font-claude-message,
-html.chatfaces-active .font-user-message,
-html.chatfaces-active message-content,
-html.chatfaces-active .conversation-turn {
+html:is(.chatfaces-active, .chatfaces-style-active) [data-chatfaces-surface="secondary"] :is(
+  article, .ProseMirror, [contenteditable="true"], [class*="markdown" i],
+  [class*="prose" i], [data-testid*="document-content"], [data-testid*="artifact-content"],
+  [data-testid*="canvas-content"]
+) {
   font-size: var(--chatfaces-message-font-size) !important;
   line-height: var(--chatfaces-message-line-height) !important;
 }
 
-html.chatfaces-active article[data-testid^="conversation-turn"] *,
-html.chatfaces-active [data-chatfaces-bubble="true"] *,
-html.chatfaces-active [data-testid="user-message"] *,
-html.chatfaces-active [data-testid="assistant-message"] *,
-html.chatfaces-active .font-claude-message *,
-html.chatfaces-active .font-user-message *,
-html.chatfaces-active message-content *,
-html.chatfaces-active .conversation-turn * {
-  color: var(--chatfaces-text-color) !important;
+html:is(.chatfaces-active, .chatfaces-style-active) :is([data-chatfaces-bubble], [data-chatfaces-surface]) :is(h1, h2) {
+  font-size: 1.35em !important;
+  line-height: 1.35 !important;
 }
 
-/* Sidebar text + icons */
-html.chatfaces-active nav *,
-html.chatfaces-active aside *,
-html.chatfaces-active [class*="sidebar"] *,
-html.chatfaces-active [data-testid*="sidebar"] *,
-html.chatfaces-active [data-testid*="history"] *,
-html.chatfaces-active [data-sidebar] *,
-html.chatfaces-active mat-sidenav * {
-  color: var(--chatfaces-sidebar-text-color) !important;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7) !important;
+html:is(.chatfaces-active, .chatfaces-style-active) :is([data-chatfaces-bubble], [data-chatfaces-surface]) :is(h3, h4, h5, h6) {
+  font-size: 1.1em !important;
+  line-height: 1.4 !important;
 }
 
-html.chatfaces-active nav svg,
-html.chatfaces-active aside svg,
-html.chatfaces-active [class*="sidebar"] svg,
-html.chatfaces-active [data-testid*="sidebar"] svg,
-html.chatfaces-active [data-testid*="history"] svg,
-html.chatfaces-active [data-sidebar] svg {
-  color: var(--chatfaces-sidebar-text-color) !important;
+html:is(.chatfaces-active, .chatfaces-style-active) :is([data-chatfaces-bubble], [data-chatfaces-surface]) a {
+  text-decoration: underline !important;
+  text-underline-offset: 0.16em !important;
 }
 
-html.chatfaces-active textarea,
-html.chatfaces-active input,
-html.chatfaces-active [contenteditable="true"] {
-  color: var(--chatfaces-text-color) !important;
-  caret-color: var(--chatfaces-text-color) !important;
-  font-size: calc(1rem * var(--chatfaces-ui-text-scale)) !important;
-  line-height: var(--chatfaces-message-line-height) !important;
+html:is(.chatfaces-active, .chatfaces-style-active) :is([data-chatfaces-bubble], [data-chatfaces-surface]) :is(input, textarea, select, [contenteditable="true"]) {
+  box-sizing: border-box !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  color: var(--chatfaces-current-text-color) !important;
+  caret-color: var(--chatfaces-current-text-color) !important;
+  background-color: var(--chatfaces-current-bg) !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
 }
 
-/* Sidebar hover */
-html.chatfaces-active nav a:hover,
-html.chatfaces-active nav li:hover,
-html.chatfaces-active nav button:hover,
-html.chatfaces-active aside a:hover,
-html.chatfaces-active aside li:hover,
-html.chatfaces-active aside button:hover,
-html.chatfaces-active [class*="sidebar"] a:hover,
-html.chatfaces-active [class*="sidebar"] li:hover,
-html.chatfaces-active [class*="sidebar"] button:hover,
-html.chatfaces-active [data-testid*="sidebar"] a:hover,
-html.chatfaces-active [data-testid*="sidebar"] li:hover,
-html.chatfaces-active [data-testid*="sidebar"] button:hover,
-html.chatfaces-active [data-testid*="history"] a:hover,
-html.chatfaces-active [data-testid*="history"] li:hover,
-html.chatfaces-active [data-testid*="history"] button:hover,
-html.chatfaces-active [data-sidebar] a:hover,
-html.chatfaces-active [data-sidebar] li:hover,
-html.chatfaces-active [data-sidebar] button:hover {
-  background-color: var(--chatfaces-hover-bg) !important;
+html:is(.chatfaces-active, .chatfaces-style-active) :is([data-chatfaces-bubble], [data-chatfaces-surface]) :is(input, textarea)::placeholder {
+  color: var(--chatfaces-current-text-color) !important;
+  opacity: 1 !important;
+}
+
+html:is(.chatfaces-active, .chatfaces-style-active) :is([data-chatfaces-bubble], [data-chatfaces-surface]) svg {
+  color: var(--chatfaces-current-text-color) !important;
+}
+
+/* Code keeps indentation and horizontal scrolling; typography never forces wrapping. */
+html:is(.chatfaces-active, .chatfaces-style-active) :is([data-chatfaces-bubble], [data-chatfaces-surface]) pre {
+  --chatfaces-current-text-color: var(--chatfaces-code-text-color);
+  background: var(--chatfaces-secondary-code-bg) !important;
+  color: var(--chatfaces-code-text-color) !important;
+  box-sizing: border-box;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow-x: auto !important;
+  white-space: pre !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  font-size: var(--chatfaces-message-font-size) !important;
+  line-height: 1.6 !important;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+html:is(.chatfaces-active, .chatfaces-style-active) :is([data-chatfaces-bubble], [data-chatfaces-surface]) pre * {
+  color: var(--chatfaces-code-text-color) !important;
+  white-space: inherit !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  font-size: inherit !important;
+}
+
+html:is(.chatfaces-active, .chatfaces-style-active) :is([data-chatfaces-bubble], [data-chatfaces-surface]) table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+html:is(.chatfaces-active, .chatfaces-style-active) :is([data-chatfaces-bubble], [data-chatfaces-surface]) :is(th, td) {
+  border-color: color-mix(in srgb, var(--chatfaces-current-text-color) 30%, transparent) !important;
+}
+
+html:is(.chatfaces-active, .chatfaces-style-active) :is([data-chatfaces-bubble], [data-chatfaces-surface]) :is(a, button, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--chatfaces-current-text-color) !important;
+  outline-offset: 3px !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.chatfaces-active::before { transition: none !important; }
+}
+
+@media (forced-colors: active) {
+  html.chatfaces-active::before { display: none !important; }
 }

@@ -10,7 +10,7 @@
   <div class="container">
     <div class="header-row">
       <h1 class="title">My Chat Faces</h1>
-      <a href="https://github.com/sponsors/lech-kalinowski" target="_blank" class="sponsor-link" title="Sponsor on GitHub">&#10084;&#65039;</a>
+      <a href="https://github.com/sponsors/lech-kalinowski" target="_blank" rel="noreferrer" class="sponsor-link" title="Sponsor on GitHub" aria-label="Sponsor My Chat Faces on GitHub">&#10084;&#65039;</a>
     </div>
     <p class="subtitle">Pick a background for your AI chats</p>
 
@@ -23,34 +23,36 @@
       </div>
 
       <div class="grid">
-        <button class="card" data-bg="cyber">
-          <img src="backgrounds/cyber.png" alt="Cyber">
+        <button type="button" class="card" data-bg="cyber" aria-pressed="false">
+          <img src="backgrounds/cyber.jpg" alt="">
           <span class="label">Cyber</span>
-          <span class="check">&#10003;</span>
+          <span class="check" aria-hidden="true">&#10003;</span>
         </button>
 
-        <button class="card" data-bg="fantasy">
-          <img src="backgrounds/fantasy.png" alt="Fantasy">
+        <button type="button" class="card" data-bg="fantasy" aria-pressed="false">
+          <img src="backgrounds/fantasy.jpg" alt="">
           <span class="label">Fantasy</span>
-          <span class="check">&#10003;</span>
+          <span class="check" aria-hidden="true">&#10003;</span>
         </button>
 
-        <button class="card" data-bg="unicorns">
-          <img src="backgrounds/unicorns.png" alt="Unicorns">
+        <button type="button" class="card" data-bg="unicorns" aria-pressed="false">
+          <img src="backgrounds/unicorns.jpg" alt="">
           <span class="label">Unicorns</span>
-          <span class="check">&#10003;</span>
+          <span class="check" aria-hidden="true">&#10003;</span>
         </button>
 
-        <button class="card card-upload" id="custom-card" data-bg="custom">
+        <button type="button" class="card card-upload" id="custom-card" data-bg="custom" aria-pressed="false" aria-label="Choose or upload a custom background">
           <div class="upload-placeholder" id="upload-placeholder">
             <span class="upload-icon">+</span>
           </div>
-          <img id="custom-preview" class="custom-preview" src="" alt="Custom" style="display:none;">
-          <span class="change-btn" id="change-btn" style="display:none;">Change</span>
+          <img id="custom-preview" class="custom-preview" src="" alt="" style="display:none;">
+          <span class="change-btn" id="change-btn" aria-hidden="true" style="display:none;">Saved</span>
           <span class="label">Custom</span>
-          <span class="check">&#10003;</span>
+          <span class="check" aria-hidden="true">&#10003;</span>
         </button>
       </div>
+
+      <button type="button" id="change-custom-btn" class="change-custom-action" hidden>Replace custom image</button>
 
       <div class="control-block">
         <div class="control-heading">
@@ -59,13 +61,11 @@
         </div>
         <div class="color-row">
           <input id="solid-background-color" class="color-input" type="color" value="#F3EFE4">
-          <div class="palette" aria-label="Solid background palette">
-            <button type="button" class="swatch solid-swatch" data-color="#F3EFE4" style="--swatch-color: #F3EFE4;"></button>
-            <button type="button" class="swatch solid-swatch" data-color="#0B1020" style="--swatch-color: #0B1020;"></button>
-            <button type="button" class="swatch solid-swatch" data-color="#17243A" style="--swatch-color: #17243A;"></button>
-            <button type="button" class="swatch solid-swatch" data-color="#2B1F18" style="--swatch-color: #2B1F18;"></button>
-            <button type="button" class="swatch solid-swatch" data-color="#E7E1D4" style="--swatch-color: #E7E1D4;"></button>
-            <button type="button" class="swatch solid-swatch" data-color="#203438" style="--swatch-color: #203438;"></button>
+          <div class="palette solid-background-palette" role="group" aria-label="Solid background palette">
+            <button type="button" class="swatch solid-swatch" data-color="#F3EFE4" style="--swatch-color: #F3EFE4;" aria-label="Use warm paper background, #F3EFE4" aria-pressed="false"></button>
+            <button type="button" class="swatch solid-swatch" data-color="#0B1020" style="--swatch-color: #0B1020;" aria-label="Use midnight background, #0B1020" aria-pressed="false"></button>
+            <button type="button" class="swatch solid-swatch" data-color="#17243A" style="--swatch-color: #17243A;" aria-label="Use navy background, #17243A" aria-pressed="false"></button>
+            <button type="button" class="swatch solid-swatch" data-color="#2B1F18" style="--swatch-color: #2B1F18;" aria-label="Use warm dark background, #2B1F18" aria-pressed="false"></button>
           </div>
         </div>
         <p class="section-hint">Use a flat background color for low-distraction, high-contrast reading.</p>
@@ -74,21 +74,11 @@
 
     <input type="file" id="file-input" accept="image/*" hidden>
 
-    <section class="settings-panel settings-panel-compact" aria-labelledby="background-reset-title">
-      <div class="settings-header">
-        <div>
-          <h2 class="settings-title" id="background-reset-title">Remove Background</h2>
-          <p class="settings-copy">Go back to the default site look whenever you want.</p>
-        </div>
-      </div>
-      <button id="remove-btn" class="remove-btn" disabled>Remove Background</button>
-    </section>
-
     <section class="settings-panel" aria-labelledby="accessibility-title">
       <div class="settings-header">
         <div>
           <h2 class="settings-title" id="accessibility-title">Accessibility</h2>
-          <p class="settings-copy">Start with readable presets and text scaling before moving into full styling.</p>
+          <p class="settings-copy">Readable presets apply right away. Readability Guard stays active for every custom style.</p>
         </div>
       </div>
       <div class="control-block">
@@ -96,16 +86,16 @@
           <span class="control-label">Accessibility presets</span>
           <span class="control-value" id="accessibility-preset-value">Balanced</span>
         </div>
-        <div class="preset-grid" aria-label="Accessibility presets">
-          <button type="button" class="preset-chip preset-chip-featured" data-preset="lowVision">
+        <div class="preset-grid" role="group" aria-label="Accessibility presets">
+          <button type="button" class="preset-chip preset-chip-featured" data-preset="lowVision" aria-pressed="false">
             <span class="preset-chip-title">Low Vision</span>
-            <span class="preset-chip-note">Best for weak eyesight: larger text, stronger contrast, clearer layout</span>
+            <span class="preset-chip-note">Designed for low vision: larger text, stronger contrast, clearer layout</span>
           </button>
-          <button type="button" class="preset-chip" data-preset="default">Balanced</button>
-          <button type="button" class="preset-chip" data-preset="largeType">Large Type</button>
-          <button type="button" class="preset-chip" data-preset="highContrast">High Contrast</button>
-          <button type="button" class="preset-chip" data-preset="warmContrast">Warm Contrast</button>
-          <button type="button" class="preset-chip" data-preset="paper">Paper</button>
+          <button type="button" class="preset-chip" data-preset="default" aria-pressed="false">Balanced</button>
+          <button type="button" class="preset-chip" data-preset="largeType" aria-pressed="false">Large Type</button>
+          <button type="button" class="preset-chip" data-preset="highContrast" aria-pressed="false">High Contrast</button>
+          <button type="button" class="preset-chip" data-preset="warmContrast" aria-pressed="false">Warm Contrast</button>
+          <button type="button" class="preset-chip" data-preset="paper" aria-pressed="false">Paper</button>
         </div>
       </div>
 
@@ -140,27 +130,40 @@
           value="100"
         >
       </div>
+
+      <div class="chat-preview" id="chat-preview" aria-hidden="true">
+        <div class="preview-bubble preview-bubble-user" id="preview-user-bubble">Can you make this easier to read?</div>
+        <div class="preview-bubble preview-bubble-assistant" id="preview-assistant-bubble">Yes. Larger text and higher contrast can help.</div>
+        <div class="preview-document" id="preview-document">
+          <div class="preview-document-bar" id="preview-document-bar">
+            <span>MARKDOWN</span>
+            <span aria-hidden="true">&bull;&bull;&bull;</span>
+          </div>
+          <strong>Document preview</strong>
+          <p>Your colors and readable text continue in additional windows.</p>
+          <code id="preview-document-code"># notes.md</code>
+        </div>
+      </div>
+      <div class="readability-guard" id="readability-guard-status" role="note" data-adjusted="false">
+        <strong>Readability Guard is always on</strong>
+        <span>Your text and generated answers are checked against a 4.5:1 contrast target.</span>
+      </div>
     </section>
 
     <details class="settings-panel disclosure-panel" aria-labelledby="personalization-title">
       <summary class="disclosure-summary">
         <div>
           <h2 class="settings-title" id="personalization-title">Full Personalization</h2>
-          <p class="settings-copy">Open advanced controls for preview, colors, opacity, and brightness.</p>
+          <p class="settings-copy">Open advanced controls for colors, opacity, and background brightness.</p>
         </div>
         <span class="disclosure-indicator" aria-hidden="true">+</span>
       </summary>
 
       <div class="disclosure-content">
-        <div class="chat-preview" id="chat-preview" aria-hidden="true">
-          <div class="preview-bubble preview-bubble-user" id="preview-user-bubble">Can you make this easier to read?</div>
-          <div class="preview-bubble preview-bubble-assistant" id="preview-assistant-bubble">Yes. Larger text and higher contrast can help.</div>
-        </div>
-
         <div class="control-block">
           <div class="control-heading">
-            <label class="control-label" for="surface-opacity">Surface opacity</label>
-            <output class="control-value" id="surface-opacity-value" for="surface-opacity">55%</output>
+            <label class="control-label" for="surface-opacity">Preferred surface opacity</label>
+            <output class="control-value" id="surface-opacity-value" for="surface-opacity">75%</output>
           </div>
           <input
             id="surface-opacity"
@@ -169,8 +172,9 @@
             min="25"
             max="95"
             step="1"
-            value="55"
+            value="75"
           >
+          <p class="section-hint">Your choice is preserved when safe. Text surfaces automatically keep enough opacity for clear reading.</p>
         </div>
 
         <div class="control-block">
@@ -192,70 +196,74 @@
         <div class="control-block">
           <div class="control-heading">
             <label class="control-label" for="user-bubble-color">User bubble</label>
-            <span class="control-value" id="user-bubble-color-value">#227864</span>
+            <span class="control-value" id="user-bubble-color-value">#073B32</span>
           </div>
           <div class="color-row">
-            <input id="user-bubble-color" class="color-input" type="color" value="#227864">
-            <div class="palette" aria-label="User bubble palette">
-              <button type="button" class="swatch" data-target="userBubbleColor" data-color="#F8F6F1" style="--swatch-color: #F8F6F1;"></button>
-              <button type="button" class="swatch" data-target="userBubbleColor" data-color="#227864" style="--swatch-color: #227864;"></button>
-              <button type="button" class="swatch" data-target="userBubbleColor" data-color="#845EC2" style="--swatch-color: #845EC2;"></button>
-              <button type="button" class="swatch" data-target="userBubbleColor" data-color="#C34A36" style="--swatch-color: #C34A36;"></button>
-              <button type="button" class="swatch" data-target="userBubbleColor" data-color="#0081CF" style="--swatch-color: #0081CF;"></button>
-              <button type="button" class="swatch" data-target="userBubbleColor" data-color="#F9A826" style="--swatch-color: #F9A826;"></button>
+            <input id="user-bubble-color" class="color-input" type="color" value="#073B32">
+            <div class="palette" role="group" aria-label="User bubble palette">
+              <button type="button" class="swatch" data-target="userBubbleColor" data-color="#F8F6F1" style="--swatch-color: #F8F6F1;" aria-label="Set user bubble to #F8F6F1" aria-pressed="false"></button>
+              <button type="button" class="swatch" data-target="userBubbleColor" data-color="#073B32" style="--swatch-color: #073B32;" aria-label="Set user bubble to #073B32" aria-pressed="false"></button>
+              <button type="button" class="swatch" data-target="userBubbleColor" data-color="#845EC2" style="--swatch-color: #845EC2;" aria-label="Set user bubble to #845EC2" aria-pressed="false"></button>
+              <button type="button" class="swatch" data-target="userBubbleColor" data-color="#C34A36" style="--swatch-color: #C34A36;" aria-label="Set user bubble to #C34A36" aria-pressed="false"></button>
+              <button type="button" class="swatch" data-target="userBubbleColor" data-color="#0081CF" style="--swatch-color: #0081CF;" aria-label="Set user bubble to #0081CF" aria-pressed="false"></button>
+              <button type="button" class="swatch" data-target="userBubbleColor" data-color="#F9A826" style="--swatch-color: #F9A826;" aria-label="Set user bubble to #F9A826" aria-pressed="false"></button>
             </div>
           </div>
         </div>
 
         <div class="control-block">
           <div class="control-heading">
-            <label class="control-label" for="assistant-bubble-color">Assistant bubble</label>
+            <label class="control-label" for="assistant-bubble-color">Assistant / documents</label>
             <span class="control-value" id="assistant-bubble-color-value">#1E1E32</span>
           </div>
           <div class="color-row">
             <input id="assistant-bubble-color" class="color-input" type="color" value="#1E1E32">
-            <div class="palette" aria-label="Assistant bubble palette">
-              <button type="button" class="swatch" data-target="assistantBubbleColor" data-color="#F8F6F1" style="--swatch-color: #F8F6F1;"></button>
-              <button type="button" class="swatch" data-target="assistantBubbleColor" data-color="#1E1E32" style="--swatch-color: #1E1E32;"></button>
-              <button type="button" class="swatch" data-target="assistantBubbleColor" data-color="#16324F" style="--swatch-color: #16324F;"></button>
-              <button type="button" class="swatch" data-target="assistantBubbleColor" data-color="#3B1F2B" style="--swatch-color: #3B1F2B;"></button>
-              <button type="button" class="swatch" data-target="assistantBubbleColor" data-color="#2D3A1F" style="--swatch-color: #2D3A1F;"></button>
-              <button type="button" class="swatch" data-target="assistantBubbleColor" data-color="#3B2F63" style="--swatch-color: #3B2F63;"></button>
+            <div class="palette" role="group" aria-label="Assistant bubble palette">
+              <button type="button" class="swatch" data-target="assistantBubbleColor" data-color="#F8F6F1" style="--swatch-color: #F8F6F1;" aria-label="Set assistant bubble to #F8F6F1" aria-pressed="false"></button>
+              <button type="button" class="swatch" data-target="assistantBubbleColor" data-color="#1E1E32" style="--swatch-color: #1E1E32;" aria-label="Set assistant bubble to #1E1E32" aria-pressed="false"></button>
+              <button type="button" class="swatch" data-target="assistantBubbleColor" data-color="#16324F" style="--swatch-color: #16324F;" aria-label="Set assistant bubble to #16324F" aria-pressed="false"></button>
+              <button type="button" class="swatch" data-target="assistantBubbleColor" data-color="#3B1F2B" style="--swatch-color: #3B1F2B;" aria-label="Set assistant bubble to #3B1F2B" aria-pressed="false"></button>
+              <button type="button" class="swatch" data-target="assistantBubbleColor" data-color="#2D3A1F" style="--swatch-color: #2D3A1F;" aria-label="Set assistant bubble to #2D3A1F" aria-pressed="false"></button>
+              <button type="button" class="swatch" data-target="assistantBubbleColor" data-color="#3B2F63" style="--swatch-color: #3B2F63;" aria-label="Set assistant bubble to #3B2F63" aria-pressed="false"></button>
             </div>
           </div>
         </div>
 
         <div class="control-block">
           <div class="control-heading">
-            <label class="control-label" for="text-color">Text color</label>
-            <span class="control-value" id="text-color-value">#E8E8EE</span>
+            <label class="control-label" for="text-color">Preferred text color</label>
+            <span class="control-value" id="text-color-value">#FFFFFF</span>
           </div>
           <div class="color-row">
-            <input id="text-color" class="color-input" type="color" value="#E8E8EE">
-            <div class="palette" aria-label="Text color palette">
-              <button type="button" class="swatch" data-target="textColor" data-color="#111111" style="--swatch-color: #111111;"></button>
-              <button type="button" class="swatch" data-target="textColor" data-color="#E8E8EE" style="--swatch-color: #E8E8EE;"></button>
-              <button type="button" class="swatch" data-target="textColor" data-color="#FFFFFF" style="--swatch-color: #FFFFFF;"></button>
-              <button type="button" class="swatch" data-target="textColor" data-color="#FFE9C7" style="--swatch-color: #FFE9C7;"></button>
-              <button type="button" class="swatch" data-target="textColor" data-color="#D9F4FF" style="--swatch-color: #D9F4FF;"></button>
-              <button type="button" class="swatch" data-target="textColor" data-color="#D8FFD8" style="--swatch-color: #D8FFD8;"></button>
+            <input id="text-color" class="color-input" type="color" value="#FFFFFF">
+            <div class="palette" role="group" aria-label="Text color palette">
+              <button type="button" class="swatch" data-target="textColor" data-color="#111111" style="--swatch-color: #111111;" aria-label="Set text color to #111111" aria-pressed="false"></button>
+              <button type="button" class="swatch" data-target="textColor" data-color="#E8E8EE" style="--swatch-color: #E8E8EE;" aria-label="Set text color to #E8E8EE" aria-pressed="false"></button>
+              <button type="button" class="swatch" data-target="textColor" data-color="#FFFFFF" style="--swatch-color: #FFFFFF;" aria-label="Set text color to #FFFFFF" aria-pressed="false"></button>
+              <button type="button" class="swatch" data-target="textColor" data-color="#FFE9C7" style="--swatch-color: #FFE9C7;" aria-label="Set text color to #FFE9C7" aria-pressed="false"></button>
+              <button type="button" class="swatch" data-target="textColor" data-color="#D9F4FF" style="--swatch-color: #D9F4FF;" aria-label="Set text color to #D9F4FF" aria-pressed="false"></button>
+              <button type="button" class="swatch" data-target="textColor" data-color="#D8FFD8" style="--swatch-color: #D8FFD8;" aria-label="Set text color to #D8FFD8" aria-pressed="false"></button>
             </div>
           </div>
+          <p class="section-hint">Readability Guard keeps this color when it passes 4.5:1 contrast, or safely uses black or white only where needed.</p>
         </div>
       </div>
     </details>
 
     <section class="settings-panel settings-panel-compact" aria-label="Style actions">
       <div class="settings-actions">
-        <p class="settings-hint">Apply accessibility and personalization changes to the current chat when you are ready.</p>
+        <p class="settings-hint">Presets apply instantly. Use Apply Style for manual changes.</p>
+        <p id="action-status" class="action-status" role="status" aria-live="polite" aria-atomic="true" data-tone="neutral">Checking the current tab...</p>
         <div class="settings-action-buttons">
-          <button type="button" id="reset-style-btn" class="ghost-btn">Reset</button>
+          <button type="button" id="reset-style-btn" class="ghost-btn">Reset style</button>
+          <button type="button" id="remove-btn" class="remove-btn" disabled>Remove Background</button>
           <button type="button" id="apply-style-btn" class="apply-btn" disabled>Apply Style</button>
         </div>
       </div>
     </section>
   </div>
 
+  <script src="readability.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

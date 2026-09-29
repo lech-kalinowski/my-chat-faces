@@ -1,10 +1,14 @@
 # Feature Release Roadmap
 
-This roadmap covers the post-`v1.0.0` feature plan. Current extension version: `v1.2.0`.
+This roadmap covers the post-`v1.0.0` feature plan. Current extension version: `v1.3.9`.
+
+## September 2026 Compatibility Update
+
+`v1.3.9` restores current ChatGPT and Grok message detection, scopes transparency to recognized chat containers, preserves code formatting, and adds browser regression coverage for every supported provider. Accessibility and visibility regressions take priority over new visual features. See [verification and release notes](docs/releases/1.3.9.md).
 
 ## North Star
 
-Ship a stable, customizable chat background experience across supported AI sites, then prepare for broader distribution (Chrome Web Store growth + cross-browser support).
+Ship a stable, customizable chat visual identity experience across supported AI sites, then prepare for broader distribution (Chrome Web Store growth + cross-browser support).
 
 ## Release Timeline (2026)
 
@@ -13,9 +17,14 @@ Ship a stable, customizable chat background experience across supported AI sites
 | `v1.1.0` | Mar 4 - Mar 17 | Stability and compatibility hardening |
 | `v1.2.0` | Mar 18 - Apr 7 | User controls (palette + opacity) and quality-of-life features |
 | `v1.3.0` | Apr 8 - Apr 28 | Preconfigured themes and content expansion |
-| `v2.0.0` | Apr 29 - May 26 | Production readiness and platform expansion |
+| `v1.3.7` | Jul 16 | Themed Canvas, Artifact, markdown, dialog, and file-preview windows |
+| `v1.3.8` | Jul 16 | Always-on contrast protection for chat text and generated outcomes |
+| `v1.3.9` | Sep 29 | Current chat layouts, readable surfaces, and rendering regression tests |
+| `v1.4.0` | Jul 13 - Aug 14 | Avatars and chat identity |
+| `v2.0.0` | Aug 17 - Sep 18 | Production readiness and platform expansion |
 
 Sequencing rule: preconfigured themes ship only after user-facing color and opacity controls are stable in `v1.2.0`.
+Sequencing rule: avatar features ship only after `v1.2.0` controls and `v1.3.0` themes are stable, so avatar styling can inherit the final bubble/layout system.
 
 ## `v1.1.0` - Stability First
 
@@ -66,6 +75,33 @@ Sequencing rule: preconfigured themes ship only after user-facing color and opac
 - Import/export roundtrip works without data loss.
 - Rotation feature can be safely paused or disabled at any time.
 
+## `v1.4.0` - Avatars & Chat Identity
+
+### Scope
+
+- Add avatar selection for both user and assistant roles directly in the popup.
+- Support built-in avatar packs (people, pets, mascot/bot styles) plus custom avatar uploads.
+- Render sticker-style avatars next to chat bubbles, matching the playful "avatar beside the message" direction from the current concept image.
+- Add avatar controls for size, shape, and spacing so users can tune how prominent avatars feel in the chat.
+- Add display rules such as "show on every message" or "show only on the first message in a grouped turn".
+- Handle native site avatar conflicts so custom avatars do not appear duplicated or overlap existing UI.
+
+### Implementation Plan
+
+1. Define avatar settings model in storage: role-based avatar source, selected preset/upload, visibility mode, size, and per-site overrides.
+2. Extend the popup with an avatar picker, upload/remove actions, and a live preview beside sample user/assistant bubbles.
+3. Add a rendering layer in the content script that injects avatar containers beside supported message blocks without breaking site layouts.
+4. Build per-site alignment rules for ChatGPT, Claude, Gemini, and Grok so avatars stay attached to the correct side of each bubble.
+5. Run QA for compact layouts, long conversations, zoomed pages, and fallback behavior when selectors or native avatars change.
+
+### Exit Criteria
+
+- Users can assign separate avatars for user and assistant messages without editing code.
+- Built-in avatars and uploaded avatars both persist correctly after reload and browser restart.
+- Avatars align with chat bubbles on all supported sites without covering actions, timestamps, or composer controls.
+- Users can disable avatars or switch to a compact mode if the conversation area feels too crowded.
+- The avatar feature remains visually consistent with theme, color, opacity, and brightness settings.
+
 ## `v2.0.0` - Release Maturity
 
 ### Scope
@@ -92,7 +128,7 @@ Sequencing rule: preconfigured themes ship only after user-facing color and opac
 
 ## Success Metrics
 
-- Background apply success rate: `>= 99%` in manual/telemetry sampling.
+- Background apply success rate: `>= 99%` in controlled compatibility QA.
 - Critical regressions found after release: `0`.
 - Time to patch site DOM breakage: `< 48 hours`.
-- User feature adoption (custom or preset selection active): increasing release-over-release.
+- Opt-in user feedback on customization value: improving release-over-release.

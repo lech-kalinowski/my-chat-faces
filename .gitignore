@@ -1,1 +1,4 @@
 landing-page/
+.DS_Store
+*.zip
+release/
