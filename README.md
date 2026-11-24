@@ -4,7 +4,7 @@ A Chrome extension that lets you set custom backgrounds on AI chat interfaces â€
 
 Pick from three built-in backgrounds (Cyber, Fantasy, Unicorns), switch to a solid color, or upload your own image. Your choice persists across sessions, and backgrounds apply automatically every time you visit a supported site.
 
-**Version 1.3.9:** updated ChatGPT and Grok message detection, safer background styling, readable menus and document panels, preserved code formatting, and more reliable preset application. See [release notes and verification scope](docs/releases/1.3.9.md).
+**Version 1.3.11:** follows ChatGPT's November workspace change so its new backdrop no longer hides wallpapers, and protects the updated home greeting over images. Includes the earlier popup connection fix without new permissions. See [release notes and verification scope](docs/releases/1.3.11.md).
 
 <img width="1776" height="1188" alt="Screenshot 2026-02-06 at 17 06 52" src="https://github.com/user-attachments/assets/616d0762-8b60-43c8-a0ff-1afd8caa4a00" />
 
@@ -100,7 +100,7 @@ Run the rendering and popup regression suite before packaging:
 node tests/serve.mjs
 ```
 
-Open `http://127.0.0.1:8787` and click **Run all tests**. The fixtures cover current and legacy markup, mobile-sized and desktop windows, streaming changes, Paper and Low Vision presets, generated text, and code. Live site updates still require a manual check after loading the new extension and refreshing the chat tabs.
+Open `http://127.0.0.1:8787` and click **Run all tests**. The fixtures cover current and legacy markup, mobile-sized and desktop windows, streaming changes, Paper and Low Vision presets, generated text, and code. ChatGPT tests also decode all built-in images and an uploaded PNG, reproduce its October and November workspace pseudo-elements, check both home-screen greeting layouts, and simulate the popup's missing tab URL. Use `?baseline=1.3.10` (or `?baseline=1.3.9`) to demonstrate regressions against a locally staged previous package. Live site updates still require a separate manual check after loading the new extension and refreshing the chat tabs.
 
 ## Roadmap
 

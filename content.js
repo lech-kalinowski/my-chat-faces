@@ -410,6 +410,9 @@ function markInterfaceSurfaces() {
     composer: '[data-composer-surface-variant], [data-tap-focuses-field]:has([data-testid="chat-input"]), form:has(textarea), form:has([contenteditable="true"]), fieldset:has([contenteditable="true"]), .input-area-container, rich-textarea, .query-bar',
     toolbar: 'header, [data-testid="message-actions"], .action-buttons',
   };
+  if (detectSite() === "chatgpt") {
+    groups.welcome = '.home-composer-anchor h1, [class~="group/home-composer-layout"] h1:has([data-headline]), [class~="group/home-suggestion-list-item"]';
+  }
   for (const [kind, selector] of Object.entries(groups)) {
     document.querySelectorAll(selector).forEach((node) => {
       if (node.closest('[data-chatfaces-bubble], [data-chatfaces-surface="secondary"]')) return;
@@ -470,7 +473,7 @@ function startPageMarkerObserver() {
   pageMarkerObserver = new MutationObserver(schedulePageMarkerSync);
   pageMarkerObserver.observe(document.body, {
     attributes: true,
-    attributeFilter: ["data-message-author-role", "data-testid", "data-test-id", "data-turn", "data-user-message-bubble", "data-markdown-text-style", "data-perf-reply-text", "class", "dir", "role", "aria-label", "aria-modal", "open"],
+    attributeFilter: ["data-message-author-role", "data-testid", "data-test-id", "data-turn", "data-user-message-bubble", "data-markdown-text-style", "data-perf-reply-text", "data-headline", "class", "dir", "role", "aria-label", "aria-modal", "open"],
     childList: true,
     subtree: true,
   });
@@ -712,13 +715,18 @@ function init() {
   });
 
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    const currentSite = detectSite();
+    if (!currentSite) return;
+    if (message?.type === "chatfaces:get-status") {
+      sendResponse({ ok: true, siteLabel: getSiteLabel(currentSite) });
+      return;
+    }
     if (message?.type !== "chatfaces:apply-style-settings") return;
-    if (!detectSite()) return;
 
     hasStoredStyle = true;
     applyStyleSettings(message.settings);
     syncPageMarkers();
-    sendResponse({ ok: true, siteLabel: getSiteLabel(site) });
+    sendResponse({ ok: true, siteLabel: getSiteLabel(currentSite) });
   });
 }
 

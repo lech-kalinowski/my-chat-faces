@@ -1,6 +1,14 @@
 # Feature Release Roadmap
 
-This roadmap covers the post-`v1.0.0` feature plan. Current extension version: `v1.3.9`.
+This roadmap covers the post-`v1.0.0` feature plan. Current extension version: `v1.3.11`.
+
+## November 2026 Background Hotfix
+
+`v1.3.11` handles the backdrop that moved to ChatGPT's parent workspace and the new animated home greeting. Keep both observed layouts in regression coverage rather than replacing the previous fixture. Preserve native decorations and restore the site's backdrop when a background is removed. See [verification and release notes](docs/releases/1.3.11.md).
+
+## October 2026 Background Hotfix
+
+`v1.3.10` targets ChatGPT's new opaque workspace pseudo-element, adds home-screen readability surfaces, and fixes popup detection when Chrome omits the tab URL. Background regression coverage must include real image decoding, uploaded images, empty conversations, and the exact previous package as a failing baseline. Installed-build checks remain a separate release gate. See [verification and release notes](docs/releases/1.3.10.md).
 
 ## September 2026 Compatibility Update
 
@@ -20,6 +28,8 @@ Ship a stable, customizable chat visual identity experience across supported AI 
 | `v1.3.7` | Jul 16 | Themed Canvas, Artifact, markdown, dialog, and file-preview windows |
 | `v1.3.8` | Jul 16 | Always-on contrast protection for chat text and generated outcomes |
 | `v1.3.9` | Sep 29 | Current chat layouts, readable surfaces, and rendering regression tests |
+| `v1.3.10` | Oct 1 | ChatGPT workspace background hotfix and image-background regression coverage |
+| `v1.3.11` | Nov 24 | ChatGPT parent-workspace backdrop and updated home greeting |
 | `v1.4.0` | Jul 13 - Aug 14 | Avatars and chat identity |
 | `v2.0.0` | Aug 17 - Sep 18 | Production readiness and platform expansion |
 

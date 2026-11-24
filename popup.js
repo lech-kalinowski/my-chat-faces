@@ -198,13 +198,30 @@ function refreshActiveTabStatus() {
       return;
     }
 
-    activeSiteLabel = getSupportedSiteLabel(tabs?.[0]?.url);
-    if (activeSiteLabel) {
-      setStatus(`Ready for ${activeSiteLabel}.`, "success");
+    const tab = tabs?.[0];
+    activeSiteLabel = null;
+    if (!tab?.id || !chrome.tabs.sendMessage) {
+      setStatus("Open a supported chat to see changes.", "neutral");
       return;
     }
 
-    setStatus("Open ChatGPT, Claude, Gemini, or Grok to see changes.", "warning");
+    // Content-script access does not grant tabs.Tab.url. Ask the script itself,
+    // rather than requesting broader browsing permissions just for a status label.
+    chrome.tabs.sendMessage(tab.id, { type: "chatfaces:get-status" }, (response) => {
+      const messageError = chrome.runtime.lastError;
+      if (!messageError && response?.ok && response.siteLabel) {
+        activeSiteLabel = response.siteLabel;
+        setStatus(`Ready for ${activeSiteLabel}.`, "success");
+        return;
+      }
+      activeSiteLabel = getSupportedSiteLabel(tab.url);
+      setStatus(
+        activeSiteLabel
+          ? `Refresh ${activeSiteLabel} to connect the extension.`
+          : "If changes are missing, open or refresh a supported chat. Settings are saved.",
+        "warning"
+      );
+    });
   });
 }
 

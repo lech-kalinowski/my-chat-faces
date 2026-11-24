@@ -9,10 +9,17 @@ h1 { margin-bottom: 8px; } button,select { padding: 10px; font: inherit; }
 iframe { display: block; height: 850px; border: 1px solid #aaa; margin-top: 20px; background: white; }
 </style>
 <h1>My Chat Faces: visibility regression suite</h1>
-<p>Sanitized fixtures based on live DOM inspection, September 29, 2026. Runs the actual extension CSS and scripts with simulated Chrome storage.</p>
+<p>Sanitized fixtures based on live DOM inspection through November 24, 2026, including both ChatGPT workspace backdrops and the animated home greeting. Runs production CSS and scripts with simulated Chrome storage. Image tests cover built-in and uploaded backgrounds; these are not installed-extension end-to-end tests.</p>
 <button id="run">Run all tests</button>
 <select id="site" aria-label="Fixture"></select>
 <select id="preset" aria-label="Preset"></select>
+<select id="background" aria-label="Preview background">
+  <option value="solid">Solid</option><option value="cyber">Cyber</option>
+  <option value="fantasy">Fantasy</option><option value="unicorns">Unicorns</option>
+</select>
+<select id="width" aria-label="Preview width">
+  <option value="390">390px</option><option value="900" selected>900px</option><option value="1000">1000px</option>
+</select>
 <button id="preview">Preview fixture</button>
 <p id="summary">Ready</p>
 <pre id="results"></pre>
